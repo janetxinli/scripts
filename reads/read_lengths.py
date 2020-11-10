@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Print a tsv file of read lengths or a histogram of read lengths.
-"""
+"""Print a tsv file of read lengths or a histogram of read lengths."""
 
 import sys
 import argparse
@@ -35,7 +33,7 @@ def get_readlengths(read_file, outfile=None, print_lengths=True):
                 return lengths
         else:
             print("read_lengths: error: reads must be piped from stdin or given with the -r argument",
-                file=sys.stderr)
+                file=sys.stderr, flush=True)
             sys.exit(1)
 
 
