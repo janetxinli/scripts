@@ -172,7 +172,7 @@ def get_new_file_names(read_prefix, read_suffix, min_mult, max_mult, num_files):
     """Return a list of new read file names for partitioned reads."""
     files = []
     for part in range(1, num_files + 1):
-        if min_mult == -1 and max_mult == 9e12:  # Keeping all reads
+        if min_mult == -1 and max_mult == 9e32:  # Keeping all reads
             filter_name = "_all"
         else:
             filter_name = "{0}-{1}".format(min_mult, max_mult)
@@ -196,7 +196,7 @@ def get_read_info(r1, r2):
 
 def run_filter(r1, r2, min_mult, max_mult, read_prefix, r1_suffix, r2_suffix, valid_headers):
     """Filter reads by barcode multiplicity."""
-    if min_mult == -1 and max_mult == 9e12:
+    if min_mult == -1 and max_mult == 9e32:
         filter_name = "_all"
     else:
         filter_name = "{0}-{1}".format(min_mult, max_mult)
@@ -267,7 +267,7 @@ def main():
         print("filter_bx.py: error: coverage and number of reads both provided. please provide one",
             file=sys.stderr, flush=True)
         sys.exit(1)
-
+    
     if args.coverage:
         if not args.genome:
             print("filter_bx.py: error: haploid genome size must be required to partition reads by coverage", 
@@ -275,6 +275,9 @@ def main():
             sys.exit(1)
         args.genome = get_int(args.genome)
 
+    if args.num_reads:
+        args.num_reads = get_int(args.num_reads)
+    
     try:
         read_prefix, read1_suffix, read2_suffix = get_read_info(args.r1, args.r2)
     except ValueError:
@@ -302,7 +305,6 @@ def main():
             new_files_per_read = math.ceil((total_cov / args.coverage))
             reads_per_file = ((args.coverage * args.genome) // args.read_length) // 2
         elif args.num_reads:  # Partition by number
-            args.num_reads = get_int(args.num_reads)
             reads_per_file = args.num_reads // 2
             new_files_per_read = math.ceil((total_valid_reads / 2) / reads_per_file)
 
@@ -320,9 +322,9 @@ def main():
             reads_per_file = args.num_reads // 2
         
         new_r1_files = get_new_file_names(read_prefix, read1_suffix, min_mult, max_mult, 1)
-        new_r2_files = get_new_file_names(read_prefix, read2_suffix, min_mult, max_mult, 1)
+        new_r2_files = get_new_file_names(read_prefix, read2_suffix, min_mult, max_mult, 1) 
         print("{0} valid reads".format(total_valid_reads), file=sys.stderr, flush=True)
-        print("subsampling {0} reads from each direction".format(reads_per_file),
+        print("subsampling approx. {0} reads from each direction".format(reads_per_file),
             file=sys.stderr, flush=True)
         run_partition(args.r1, args.r2, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file)
 
