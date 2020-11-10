@@ -291,12 +291,12 @@ def main():
         args.barcoded_reads = "/dev/stdin"
     valid_bx, num_headers = get_bx(args.barcoded_reads, min_mult, max_mult)
     valid_headers = set(h for bx in valid_bx.values() for h in bx)
+    total_valid_reads = num_headers * 2
 
     if args.mode == "filter":  # Filter reads by bx multiplicity
         run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, read1_suffix, read2_suffix, valid_headers)
 
     elif args.mode == "partition":  # Filter reads by bx multiplicity and partition
-        total_valid_reads = num_headers * 2
         if args.coverage:  # Partition by coverage
             total_cov = (total_valid_reads * args.read_length) // args.genome
             new_files_per_read = math.ceil((total_cov / args.coverage))
