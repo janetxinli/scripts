@@ -111,7 +111,6 @@ def partition_reads(r1_content, r2_content, new_r1_files, new_r2_files, valid_bx
     cur_new_r2 = gzip.open(new_r2_files[f], "wt")
     cur_reads = 0
     for bx in valid_bx:
-#        print(cur_reads)
         if cur_reads >= num_reads:
                 cur_new_r1.close()
                 cur_new_r2.close()
@@ -126,8 +125,6 @@ def partition_reads(r1_content, r2_content, new_r1_files, new_r2_files, valid_bx
             print("\n".join(r1_content[h]), file=cur_new_r1)
             print("\n".join(r2_content[h]), file=cur_new_r2)
             cur_reads += 1
-#        print("current bx: {}".format(bx))
-#        print("headers: {}".format(" ".join(valid_bx[bx])))
     # Close final files
     cur_new_r1.close()
     cur_new_r2.close()
@@ -183,25 +180,55 @@ def get_new_file_names(read_prefix, read_suffix, min_mult, max_mult, num_files):
     return files
 
 
+def get_read_info(r1, r2):
+    """Return a tuple of read prefix and suffixes for r1 and r2 file names."""
+    regex = "^(.+)(_S\d+_L00\d+_R[12]_001.fastq.gz)"
+    search1 = re.search(regex, r1)
+    search2 = re.search(regex, r2)
+    read_prefix = search1.group(1)
+    if read_prefix != search2.group(1):
+        raise ValueError("Read files have different prefixes")
+    else:
+        read1_suffix = search1.group(2)
+        read2_suffix = search2.group(2)
+        return read_prefix, read1_suffix, read2_suffix
+
+
+def run_filter(r1, r2, min_mult, max_mult, read_prefix, r1_suffix, r2_suffix, valid_headers):
+    """Filter reads by barcode multiplicity."""
+    if min_mult == -1 and max_mult == 9e12:
+        filter_name = "_all"
+    else:
+        filter_name = "{0}-{1}".format(min_mult, max_mult)
+    new_r1 = read_prefix + "_filterbx{0}".format(filter_name) + r1_suffix
+    new_r2 = read_prefix + "_filterbx{0}".format(filter_name) + r2_suffix
+    print("filtering reads...", file=sys.stderr, flush=True)
+    filter_reads(r1, r2, new_r1, new_r2, valid_headers)
+    print("reads filtered into new files:", new_r1, new_r2, sep="\n", flush=True)
+
+
+def run_partition(r1, r2, total_valid_reads, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file):
+    """Partition read files to a certain number of reads."""
+    print("reading in r1...", file=sys.stderr, flush=True)
+    r1_content = get_reads(r1, valid_headers)
+    print("reading in r2...", file=sys.stderr, flush=True)
+    r2_content = get_reads(r2, valid_headers)
+    print("partitioning reads...", file=sys.stderr, flush=True)
+    partition_reads(r1_content, r2_content, new_r1_files, new_r2_files, valid_bx, reads_per_file)
+
 def get_args():
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser(description="Filter or partition reads in a fastq file by \
                             barcode multiplicity or read coverage")
+    parser.add_argument("mode",
+                        choices=["filter", "partition", "subsample"],
+                        default="filter")
     parser.add_argument("r1",
                         type=str,
                         help="Gzipped file containing read 1")
     parser.add_argument("r2",
                         type=str,
                         help="Gzipped file containing read 2")
-    parser.add_argument("-f", "--filter",
-                        action="store_true",
-                        default=False,
-                        help="Filter mode; filters reads by barcode multiplicity only")
-    parser.add_argument("-p", "--partition",
-                        action="store_true",
-                        default=False,
-                        help="Partition mode; filters reads by bx multiplicity and partitions \
-                            to a certain sequence coverage")
     parser.add_argument("-m", "--multiplicity",
                         type=str,
                         required=True,
@@ -235,29 +262,19 @@ def main():
         flush=True)
     args = get_args()
 
-    if args.filter and args.partition:
-        print("filter_bx: error: filter and partition modes can only be used individually. select"
-            "'-f' or '-p'", file=sys.stderr, flush=True)
-        sys.exit(1)
-
     if args.coverage and args.num_reads:
-        print("filter_bx: error: coverage and number of reads both provided. please provide one",
+        print("filter_bx.py: error: coverage and number of reads both provided. please provide one",
             file=sys.stderr, flush=True)
         sys.exit(1)
 
-    regex = "^(.+)(_S\d+_L00\d+_R[12]_001.fastq.gz)"
-    search1 = re.search(regex, args.r1)
-    search2 = re.search(regex, args.r2)
-    read_prefix = search1.group(1)
-    if read_prefix != search2.group(1):
-        print("filter_bx: warning: read files have different prefixes. using prefix from r1",
-            file=sys.stderr, flush=True)
-    read1_suffix = search1.group(2)
-    read2_suffix = search2.group(2)
+    try:
+        read_prefix, read1_suffix, read2_suffix = get_read_info(args.r1, args.r2)
+    except ValueError:
+        sys.exit(1)
 
     if args.multiplicity == "all":
         min_mult = -1
-        max_mult = 9e12
+        max_mult = 9e12  # Cheat
     else:
         min_mult, max_mult = get_range(args.multiplicity)
 
@@ -266,28 +283,19 @@ def main():
         args.barcoded_reads = "/dev/stdin"
     valid_bx, num_headers = get_bx(args.barcoded_reads, min_mult, max_mult)
     valid_headers = set(h for bx in valid_bx.values() for h in bx)
-#    print("valid barcodes:\n", valid_bx, sep="")
-#    print("valid headers:\n", valid_headers, sep="")
 
-    if args.filter == True:  # Just want to filter reads by bx multiplicity
-        if min_mult == -1 and max_mult == 9e12:
-            filter_name = "_all"
-        else:
-            filter_name = "{0}-{1}".format(min_mult, max_mult)
-        new_r1 = read_prefix + "_filterbx{0}".format(filter_name) + read1_suffix
-        new_r2 = read_prefix + "_filterbx{0}".format(filter_name) + read2_suffix
-        print("filtering reads...", file=sys.stderr, flush=True)
-        filter_reads(args.r1, args.r2, new_r1, new_r2, valid_headers)
-        print("reads filtered into new files:", new_r1, new_r2, sep="\n", flush=True)
+    if args.mode == "filter":  # Filter reads by bx multiplicity
+        run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, r1_suffix, r2_suffix, valid_headers)
 
-    elif args.partition == True:  # Filter reads by bx multiplicity and partition
-        reads = num_headers * 2
+    elif args.mode == "partition":  # Filter reads by bx multiplicity and partition
+        total_valid_reads = num_headers * 2
         if args.coverage:  # Partition by coverage
             if not args.genome:
-                print("filter_bx: error: haploid genome size must be required to partition reads", 
+                print("filter_bx.py: error: haploid genome size must be required to partition reads", 
                 file=sys.stderr, flush=True)
+                sys.exit(1)
             args.genome = get_int(args.genome)
-            total_cov = (reads * args.read_length) // args.genome
+            total_cov = (total_valid_reads * args.read_length) // args.genome
             new_files_per_read = math.ceil((total_cov / args.coverage))
             reads_per_file = ((args.coverage * args.genome) // args.read_length) // 2
             reads_per_file = (args.coverage * args.genome // args.read_length) // 2
@@ -295,28 +303,19 @@ def main():
                 print("filter_bx: warning: reads after filtering by bx multiplicity cannot be"
                     "partitioned further. printing a single file for read1 and read2", file=sys.stderr,
                     flush=True)
-                new_r1 = read_prefix + "_filterbx{0}-{1}".format(min_mult, max_mult) + read1_suffix
-                new_r2 = read_prefix + "_filterbx{0}-{1}".format(min_mult, max_mult) + read2_suffix
-                filter_reads(args.r1, args.r2, new_r1, new_r2, valid_headers)
-                print("reads filtered into new files:", new_r1, new_r2, sep="\n", flush=True)
+                run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, read1_suffix, read2_suffix, valid_headers)
                 return
         elif args.num_reads:  # Partition by number
             args.num_reads = get_int(args.num_reads)
             reads_per_file = args.num_reads // 2
-            new_files_per_read = math.ceil((reads / 2) / reads_per_file)
+            new_files_per_read = math.ceil((total_valid_reads / 2) / reads_per_file)
 
         new_r1_files = get_new_file_names(read_prefix, read1_suffix, min_mult, max_mult, new_files_per_read)
         new_r2_files = get_new_file_names(read_prefix, read2_suffix, min_mult, max_mult, new_files_per_read)
-        print("{0} valid reads".format(reads), file=sys.stderr, flush=True)
+        print("{0} valid reads".format(total_valid_reads), file=sys.stderr, flush=True)
         print("partitioning each read direction into {0} files with approx. {1} reads each".format(new_files_per_read, reads_per_file),
-            file=sys.stderr, flush=True)
-        print("reading in r1...", file=sys.stderr, flush=True)
-        r1_content = get_reads(args.r1, valid_headers)
-        print("reading in r2...", file=sys.stderr, flush=True)
-        r2_content = get_reads(args.r2, valid_headers)
-        del valid_headers
-        print("partitioning reads...", file=sys.stderr, flush=True)
-        partition_reads(r1_content, r2_content, new_r1_files, new_r2_files, valid_bx, reads_per_file)
+        file=sys.stderr, flush=True)
+        run_partition(args.r1, args.r2, total_valid_reads, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file)
 
     print("DONE!", file=sys.stderr, flush=True)
     print("filter_bx: ended at: {0}".format(time.asctime()), file=sys.stderr, flush=True)
