@@ -285,7 +285,7 @@ def main():
     valid_headers = set(h for bx in valid_bx.values() for h in bx)
 
     if args.mode == "filter":  # Filter reads by bx multiplicity
-        run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, r1_suffix, r2_suffix, valid_headers)
+        run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, read1_suffix, read2_suffix, valid_headers)
 
     elif args.mode == "partition":  # Filter reads by bx multiplicity and partition
         total_valid_reads = num_headers * 2
