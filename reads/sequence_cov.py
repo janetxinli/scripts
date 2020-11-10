@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Author: Janet Li (@janetxinli)
-Compute sequence coverage for a genome sequencing read file.
-"""
+"""Compute sequence coverage for a genome sequencing read file."""
 
 import sys
 import argparse
