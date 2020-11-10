@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Filter, partition or subsample barcoded reads by a given read multiplicity range. Requires 
 a longranger basic-processed reads file and the unprocessed reads from supernova mkfastq. 
