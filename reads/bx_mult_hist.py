@@ -4,7 +4,7 @@
 import argparse
 import sys
 import numpy as np
-from read_fasta import read_fasta
+from fasta import read_fasta
 
 def bx_multiplicity(rfile):
     """
