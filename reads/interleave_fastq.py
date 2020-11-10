@@ -8,12 +8,12 @@ import glob
 
 def interleave_reads(read1, read2, outfile):
     """Combined reads from r1 and r2 in interleaved format and print to outfile."""
-    with gzip.open(read1, "rt") as r1, gzip.open(read2, "rt") as r2:
+    with gzip.open(read1, "rt") as r1, gzip.open(read2, "rt") as r2, open(outfile, "w+") as out:
         while True:
             for _ in range(4):
-                outfile.write(r1.readline())
+                out.write(r1.readline())
             for _ in range(4):
-                outfile.write(r2.readline())
+                out.write(r2.readline())
 
 
 def get_args():
