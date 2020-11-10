@@ -231,7 +231,7 @@ def get_args():
                         help="Gzipped file containing read 2")
     parser.add_argument("-m", "--multiplicity",
                         type=str,
-                        required=True,
+                        default="all",
                         help="Bx multiplicity range for reads to be included in output (e.g. 10-150)")
     parser.add_argument("-c", "--coverage",
                         type=int,
