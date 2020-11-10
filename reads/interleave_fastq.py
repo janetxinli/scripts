@@ -4,6 +4,7 @@
 import sys
 import argparse
 import gzip
+import glob
 
 def interleave_reads(read1, read2, outfile):
     """Combined reads from r1 and r2 in interleaved format and print to outfile."""
@@ -33,6 +34,8 @@ def get_args():
 
 def main():
     args = get_args()
+    args.r1 = glob.glob(args.r1)[0]
+    args.r2 = glob.glob(args.r2)[0]
     interleave_reads(args.r1, args.r2, args.outfile)
 
 
