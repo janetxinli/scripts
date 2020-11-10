@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
-Filter barcoded reads by a given read multiplicity range. Requires a longranger 
-basic-processed reads file and the unprocessed reads from supernova mkfastq. 
+Filter, partition or subsample barcoded reads by a given read multiplicity range. Requires 
+a longranger basic-processed reads file and the unprocessed reads from supernova mkfastq. 
 Optionally subsamples reads to a certain coverage.
 """
 
@@ -55,7 +55,7 @@ def get_bx(read_file, min_reads, max_reads):
                 header_count += len(cur_headers)
             return all_headers, header_count
         else:
-            print("filter_bx: error: barcoded reads must be piped from stdin or "
+            print("filter_bx.py: error: barcoded reads must be piped from stdin or "
                 "provided with the -b parameter", file=sys.stderr, flush=True)
             sys.exit(1)
 
@@ -119,7 +119,7 @@ def partition_reads(r1_content, r2_content, new_r1_files, new_r2_files, valid_bx
                     cur_new_r1 = gzip.open(new_r1_files[f], "wt")
                     cur_new_r2 = gzip.open(new_r2_files[f], "wt")
                 except IndexError:
-                    cur_new_reads = sys.stdout
+                    return
                 cur_reads = 0
         for h in valid_bx[bx]:
             print("\n".join(r1_content[h]), file=cur_new_r1)
@@ -134,12 +134,12 @@ def get_range(multiplicity_str):
     """Read multiplicity range from string format min-max (inclusive)."""
     mult_split = [int(i) for i in multiplicity_str.split("-")]
     if len(mult_split) != 2:
-        print("filter_bx: barcode multiplicity range must be provided in the format min-max",
+        print("filter_bx.py: barcode multiplicity range must be provided in the format min-max",
             file=sys.stderr, flush=True)
         sys.exit(1)
     min_mult, max_mult = mult_split[0], mult_split[1]
     if min_mult >= max_mult:
-        print("filter_bx: max of multiplicity range provided is not larger than the min",
+        print("filter_bx.py: max of multiplicity range provided is not larger than the min",
             file=sys.stderr, flush=True)
         sys.exit(1)
     return mult_split[0], mult_split[1]
@@ -150,7 +150,7 @@ def ensure_writable(file_name):
     if os.access(file_name, os.W_OK):
         return
     if os.access(file_name, os.F_OK):
-        print("filter_bx: error: file '{0}' exists and is not writable".format(file_name),
+        print("filter_bx.py: error: file '{0}' exists and is not writable".format(file_name),
             file=sys.stderr, flush=True)
         sys.exit(1)
 
@@ -163,7 +163,7 @@ def get_int(size_string):
     try:
         return int(float(size_string))
     except ValueError:
-        print("filter_bx: error: genome size must be given as an integer or in scientific notation (e.g. 3e9)",
+        print("filter_bx.py: error: genome size must be given as an integer or in scientific notation (e.g. 3e9)",
             file=sys.stderr, flush=True)
         sys.exit(1)
 
@@ -207,7 +207,7 @@ def run_filter(r1, r2, min_mult, max_mult, read_prefix, r1_suffix, r2_suffix, va
     print("reads filtered into new files:", new_r1, new_r2, sep="\n", flush=True)
 
 
-def run_partition(r1, r2, total_valid_reads, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file):
+def run_partition(r1, r2, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file):
     """Partition read files to a certain number of reads."""
     print("reading in r1...", file=sys.stderr, flush=True)
     r1_content = get_reads(r1, valid_headers)
@@ -240,7 +240,7 @@ def get_args():
     parser.add_argument("-g", "--genome",
                         type=str,
                         default=None,
-                        help="Haploid genome size; required to calculate read number in partition mode (-p)")
+                        help="Haploid genome size; required to calculate read number in partition mode")
     parser.add_argument("-l", "--read_length",
                         type=int,
                         default=150,
@@ -258,7 +258,8 @@ def get_args():
 
 def main():
     """Filter input reads."""
-    print("filter_bx: started at: {0}".format(time.asctime()), file=sys.stderr,
+    start = time.asctime()
+    print("filter_bx.py: started at: {0}".format(start), file=sys.stderr,
         flush=True)
     args = get_args()
 
@@ -267,6 +268,13 @@ def main():
             file=sys.stderr, flush=True)
         sys.exit(1)
 
+    if args.coverage:
+        if not args.genome:
+            print("filter_bx.py: error: haploid genome size must be required to partition reads by coverage", 
+                file=sys.stderr, flush=True)
+            sys.exit(1)
+        args.genome = get_int(args.genome)
+
     try:
         read_prefix, read1_suffix, read2_suffix = get_read_info(args.r1, args.r2)
     except ValueError:
@@ -274,7 +282,7 @@ def main():
 
     if args.multiplicity == "all":
         min_mult = -1
-        max_mult = 9e12  # Cheat
+        max_mult = 9e32  # Cheat
     else:
         min_mult, max_mult = get_range(args.multiplicity)
 
@@ -290,21 +298,9 @@ def main():
     elif args.mode == "partition":  # Filter reads by bx multiplicity and partition
         total_valid_reads = num_headers * 2
         if args.coverage:  # Partition by coverage
-            if not args.genome:
-                print("filter_bx.py: error: haploid genome size must be required to partition reads", 
-                file=sys.stderr, flush=True)
-                sys.exit(1)
-            args.genome = get_int(args.genome)
             total_cov = (total_valid_reads * args.read_length) // args.genome
             new_files_per_read = math.ceil((total_cov / args.coverage))
             reads_per_file = ((args.coverage * args.genome) // args.read_length) // 2
-            reads_per_file = (args.coverage * args.genome // args.read_length) // 2
-            if total_cov <= args.coverage:
-                print("filter_bx: warning: reads after filtering by bx multiplicity cannot be"
-                    "partitioned further. printing a single file for read1 and read2", file=sys.stderr,
-                    flush=True)
-                run_filter(args.r1, args.r2, min_mult, max_mult, read_prefix, read1_suffix, read2_suffix, valid_headers)
-                return
         elif args.num_reads:  # Partition by number
             args.num_reads = get_int(args.num_reads)
             reads_per_file = args.num_reads // 2
@@ -315,10 +311,24 @@ def main():
         print("{0} valid reads".format(total_valid_reads), file=sys.stderr, flush=True)
         print("partitioning each read direction into {0} files with approx. {1} reads each".format(new_files_per_read, reads_per_file),
         file=sys.stderr, flush=True)
-        run_partition(args.r1, args.r2, total_valid_reads, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file)
+        run_partition(args.r1, args.r2, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file)
+    
+    elif args.mode == "subsample":  # Subsample reads
+        if args.coverage:
+            reads_per_file = ((args.coverage * args.genome) // args.read_length) // 2
+        elif args.num_reads:
+            reads_per_file = args.num_reads // 2
+        
+        new_r1_files = get_new_file_names(read_prefix, read1_suffix, min_mult, max_mult, 1)
+        new_r2_files = get_new_file_names(read_prefix, read2_suffix, min_mult, max_mult, 1)
+        print("{0} valid reads".format(total_valid_reads), file=sys.stderr, flush=True)
+        print("subsampling {0} reads from each direction".format(reads_per_file),
+            file=sys.stderr, flush=True)
+        run_partition(args.r1, args.r2, new_r1_files, new_r2_files, valid_bx, valid_headers, reads_per_file)
 
     print("DONE!", file=sys.stderr, flush=True)
-    print("filter_bx: ended at: {0}".format(time.asctime()), file=sys.stderr, flush=True)
+    end = time.asctime()
+    print("filter_bx.py: ended at: {0}\nelapsed time: {1}".format(end, time.process_time()), file=sys.stderr, flush=True)
 
 
 if __name__ == "__main__":
