@@ -12,6 +12,7 @@ import math
 import time
 import re
 import argparse
+import glob
 
 def get_bx(read_file, min_reads, max_reads):
     """
@@ -262,6 +263,9 @@ def main():
     print("filter_bx.py: started at: {0}".format(start), file=sys.stderr,
         flush=True)
     args = get_args()
+
+    args.r1 = glob.glob(args.r1)[0]
+    args.r2 = glob.glob(args.r2)[0]
 
     if args.coverage and args.num_reads:
         print("filter_bx.py: error: coverage and number of reads both provided. please provide one",
