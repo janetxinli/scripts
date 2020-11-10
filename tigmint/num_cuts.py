@@ -4,7 +4,7 @@
 import sys
 
 class Contig:
-	""""""
+	"""Contig object that keeps track of number of cuts made."""
 	def __init__(self):
 		self.cuts = 0	
 	def addCut(self):
