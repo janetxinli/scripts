@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Count the number of cuts made to contigs in a tigmint breaktig bed file."""
 
 import sys
