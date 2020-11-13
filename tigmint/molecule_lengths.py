@@ -43,7 +43,7 @@ def main():
         args.bed = "/dev/stdin"
     molecule_lengths = get_molecules(args.bed)
     if args.data == "lengths":
-        print("\n".join(molecule_lengths), file=args.outfile)
+        print("\n".join([str(i) for i in molecule_lengths]), file=args.outfile)
     elif args.data == "histogram":
         print_histogram(molecule_lengths, args.bin_width, args.outfile)
 
