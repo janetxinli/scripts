@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import argparse
-sys.path.append("..")
-import print_histogram
+from reads.read_lengths import print_histogram
 
 def get_molecules(bedfile):
     """Read molecule lengths from a bed file."""
@@ -22,9 +22,9 @@ def get_args():
                         type=str,
                         choices=["histogram", "lengths"],
                         help="Molecule information (histogram or lengths)")
-    parser.add_argument("bed",
+    parser.add_argument("-b", "--bed",
                         type=str,
-                        default=sys.stdin,
+                        default=None,
                         help="Bedfile containing molecule extents [stdin]")
     parser.add_argument("-w", "--bin_width",
                         type=int,
@@ -39,6 +39,8 @@ def get_args():
 
 def main():
     args = get_args()
+    if args.bed == None:
+        args.bed = "/dev/stdin"
     molecule_lengths = get_molecules(args.bed)
     if args.data == "lengths":
         print("\n".join(molecule_lengths), file=args.outfile)
