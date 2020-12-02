@@ -8,9 +8,6 @@ scaf5   422             C       T       false   downstream_gene_variant,intergen
 
 import sys
 import argparse
-from collections import namedtuple
-
-VariantEffect = namedtuple("VariantEffect", ["total_count", "het", "homo"])
 
 class VariantFile:
     """Defines a extractFields output file."""
@@ -35,9 +32,9 @@ class VariantFile:
                         tracker[e][geno] += 1
                     else:
                         if geno == 1:  # heterozyogus
-                            tracker[e] = VariantEffect(1, 1, 0)
+                            tracker[e] = [1, 1, 0]
                         else:  # homozygous
-                            tracker[e] = VariantEffect(1, 0, 1)
+                            tracker[e] = [1, 0, 1]
     
     def print_variants(self):
         """
@@ -61,3 +58,6 @@ def main():
     for f in variant_files:
         VariantFile(f).print_variants()
 
+
+if __name__ == "__main__":
+    main()
