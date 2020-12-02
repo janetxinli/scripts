@@ -10,7 +10,7 @@ import sys
 import argparse
 
 class VariantFile:
-    """Defines a extractFields output file."""
+    """Defines an extractFields output file."""
     def __init__(self, filename):
         self.filename = filename
         self.indel_effects = {}  # effect -> (total_count, heterozygous, homozygous)
@@ -25,8 +25,15 @@ class VariantFile:
                 indel = var_info[5] == "true"  # 6th field describes variant type
                 geno = 2 if var_info[8] == "1/1" else 1  # homozygous = 2; heterozygous = 1
                 effects = var_info[6].split(",")
+                effects_clean = []
+                for effect in effects:
+                    if "&" in effect:
+                        split = effect.split("&")
+                        effects_clean.extend(split)
+                    else:
+                        effects_clean.append(effect)
                 tracker = self.indel_effects if indel else self.snp_effects
-                for e in effects:
+                for e in effects_clean:
                     if e in tracker:
                         tracker[e][0] += 1
                         tracker[e][geno] += 1
@@ -36,16 +43,12 @@ class VariantFile:
                         else:  # homozygous
                             tracker[e] = [1, 0, 1]
     
-    def print_variants(self):
-        """
-        Print variant types and effects in tsv format to stdout, eg:
-        var_type\tvar_effect\tcount\tassembly\n
-        """
-        self.parse_variants()
+    def print_variant_types(self):
+        """Print variant types and effects in tsv format to stdout."""
         var_types = {"SNP": self.snp_effects, "INDEL": self.indel_effects}
         for vt in var_types:
             for effect in var_types[vt]:
-                print(f"{vt}\t{effect}\t{var_types[vt][effect][0]}\t{self.filename}")    
+                print(f"{vt}\t{effect}\t{var_types[vt][effect][0]}\t{self.filename}")   
 
 
 def main():
@@ -56,7 +59,8 @@ def main():
     variant_files = sys.argv[1:]
     print("var_type", "var_effect", "count", "assembly", sep="\t")
     for f in variant_files:
-        VariantFile(f).print_variants()
+        cur_file = VariantFile(f)
+        cur_file.parse_variants()
 
 
 if __name__ == "__main__":
