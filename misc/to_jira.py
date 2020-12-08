@@ -4,13 +4,25 @@ import os
 import sys
 import argparse
 
+def format_number(number):
+    """Formats a number, rounding it to 2 decimal places and adding commas."""
+    try:
+        if number.isnumeric():
+            formatted = "{:,}".format(int(number))
+        else:
+            formatted = "{:,.2f}".format(float(number))
+    except ValueError:
+        formatted = number
+    finally:
+        return formatted
+
 def convert_file(in_fh, outfile, column_headers, no_header):
     """Takes as input a tsv file handle and formats the input for Jira."""
     if outfile == None:
         out = sys.stdout
     else:
         out = open(outfile, "w+")
-    header_split = in_fh.readline().strip().split("\t")
+    header_split = [format_number(i) for i in in_fh.readline().strip().split("\t")]
     if no_header:
         jira_header = "|" + "|".join(header_split) + "|"
     else:
@@ -20,17 +32,17 @@ def convert_file(in_fh, outfile, column_headers, no_header):
         jira_line = ""
         if column_headers:
             jira_line += "|"
-        line_split = line.strip().split("\t")
+        line_split = [format_number(i) for i in line.strip().split("\t")]
         jira_line += "|" + "|".join(line_split) + "|"
         print(jira_line, file=out)
     out.close()
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a tsv file to Jira table format")
-    parser.add_argument("-i", "--input", 
+    parser.add_argument("file", 
                         type=str,
                         nargs="?",
-                        default=None,
+                        default="/dev/stdin",
                         help="Input tsv file to be converted [stdin]")
     parser.add_argument("-o", "--output",
                         type=str, default=None,
@@ -44,10 +56,7 @@ def main():
                         help="Do not print a header row")
     args = parser.parse_args()
 
-    if args.input == None:
-        args.input = "/dev/stdin"
-
-    with open(args.input) as fh:
+    with open(args.file) as fh:
         if not fh.isatty():
             convert_file(fh, args.output,
                 args.columnheaders, args.noheader)
