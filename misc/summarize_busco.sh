@@ -18,6 +18,6 @@ for s in ${summaries[@]}; do
 			printf "$v\t"
 		done
 		printf "$(grep "C:" ${s} | awk -F : '{print $2}' | awk -F % '{print $1}')\t"
-		printf "${f}\n"
+		printf "${s}\n"
 	fi
 done
