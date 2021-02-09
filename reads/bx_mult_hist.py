@@ -36,9 +36,13 @@ def print_hist(bx_mult, binwidth, outfile):
     upper_lim = max_mult + (binwidth - (max_mult % binwidth))
     bins = upper_lim // binwidth
     counts, bins = np.histogram(multiplicity, bins, range=(0, upper_lim))
-    with open(outfile) as of:
-        for i, bin in enumerate(bins[1:]):
-            print(int(bin), counts[i], sep="\t", file=of)
+    if outfile == "-":
+        of = sys.stdout
+    else:
+        of = open(outfile, "w+")
+    for i, bin in enumerate(bins[1:]):
+        print(int(bin), counts[i], sep="\t", file=of)
+    of.close()
 
 
 def get_args():
@@ -50,7 +54,7 @@ def get_args():
                         help="Read file to be parsed [stdin]")
     parser.add_argument("-o", "--output_file",
                         type=str,
-                        default=sys.stdout,
+                        default="-",
                         help="Output file for histogram to be printed to [stdout]")
     parser.add_argument("-w", "--bin_width",
                         type=int,
