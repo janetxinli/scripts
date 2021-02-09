@@ -16,13 +16,15 @@ def format_number(number):
     finally:
         return formatted
 
-def convert_file(in_fh, outfile, column_headers, no_header):
+def convert_file(in_fh, outfile, column_headers, no_header, no_rounding):
     """Takes as input a tsv file handle and formats the input for Jira."""
     if outfile == None:
         out = sys.stdout
     else:
         out = open(outfile, "w+")
-    header_split = [format_number(i) for i in in_fh.readline().strip().split("\t")]
+    header_split = [i for i in in_fh.readline().strip().split("\t")]
+    if not no_rounding:
+        header_split = [format_number(i) for i in header_split]
     if no_header:
         jira_header = "|" + "|".join(header_split) + "|"
     else:
@@ -32,7 +34,9 @@ def convert_file(in_fh, outfile, column_headers, no_header):
         jira_line = ""
         if column_headers:
             jira_line += "|"
-        line_split = [format_number(i) for i in line.strip().split("\t")]
+        line_split = [i for i in line.strip().split("\t")]
+        if not no_rounding:
+            line_split = [format_number(i) for i in line_split]
         jira_line += "|" + "|".join(line_split) + "|"
         print(jira_line, file=out)
     out.close()
@@ -54,12 +58,17 @@ def main():
                         action="store_true",
                         default=False,
                         help="Do not print a header row")
+    parser.add_argument("-r", "--no_rounding",
+                        action="store_true",
+                        default=False,
+                        help="Do not round floating point numbers")
     args = parser.parse_args()
 
     with open(args.file) as fh:
         if not fh.isatty():
             convert_file(fh, args.output,
-                args.columnheaders, args.noheader)
+                args.columnheaders, args.noheader,
+                args.no_rounding)
         else:
             print("to_jira.py: error: missing input, pass a file as an argument or from stdin")
             sys.exit(1)
