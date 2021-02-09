@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# Finds complete protein sequences (starts with M, ends with *) from GAG output genome.proteins.fasta
+"""
+Finds complete protein sequences (starts with M, ends with *) from GAG output genome.proteins.fasta
+Expects sequences are in single line fasta format (one line per sequence).
+"""
 
 import sys
 import argparse

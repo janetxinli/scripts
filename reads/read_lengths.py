@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Print a tsv file of read lengths or a histogram of read lengths."""
+"""
+Print a tsv file of read lengths or a histogram of read lengths.
+Expects reads to be in single-line fasta or fastq format (one line per read sequence).
+"""
 
 import sys
 import argparse
