@@ -3,7 +3,7 @@
 import sys
 import os
 import argparse
-from reads.read_lengths import print_histogram
+from utils import print_histogram
 
 def get_molecules(bedfile):
     """Read molecule lengths from a bed file."""
@@ -32,7 +32,7 @@ def get_args():
                         help="Desired bin width for histogram [1000]")
     parser.add_argument("-o", "--outfile",
                         type=str,
-                        default=sys.stdout,
+                        default=None,
                         help="Output file [stdout]")
     return parser.parse_args()
 
