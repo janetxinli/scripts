@@ -4,7 +4,7 @@
 import argparse
 import sys
 import numpy as np
-from fasta import read_fasta
+from utils import print_histogram, read_fasta
 
 def bx_multiplicity(rfile):
     """
@@ -16,33 +16,13 @@ def bx_multiplicity(rfile):
         rfile = "/dev/stdin"
     with open(rfile) as reads:
         if not reads.isatty():
-            for head, _, bx, _ in read_fasta(reads):
+            for _, _, bx, _ in read_fasta(reads):
                 if bx != None:
                     bxs.setdefault(bx, 0)
                     bxs[bx] += 1
         else:
             raise RuntimeError("Reads must be piped from stdin if file name is not provided")
     return bxs
-
-
-def print_hist(bx_mult, binwidth, outfile):
-    """
-    Given a dictionary of barcode multiplicity where barcode -> num reads,
-    print a histogram as a tsv file to stdout.
-    """
-    multiplicity = [i for i in bx_mult.values()]
-    max_mult = np.max(multiplicity)
-    # Calculate bin width and max
-    upper_lim = max_mult + (binwidth - (max_mult % binwidth))
-    bins = upper_lim // binwidth
-    counts, bins = np.histogram(multiplicity, bins, range=(0, upper_lim))
-    if outfile == "-":
-        of = sys.stdout
-    else:
-        of = open(outfile, "w+")
-    for i, bin in enumerate(bins[1:]):
-        print(int(bin), counts[i], sep="\t", file=of)
-    of.close()
 
 
 def get_args():
@@ -54,7 +34,7 @@ def get_args():
                         help="Read file to be parsed [stdin]")
     parser.add_argument("-o", "--output_file",
                         type=str,
-                        default="-",
+                        default=None,
                         help="Output file for histogram to be printed to [stdout]")
     parser.add_argument("-w", "--bin_width",
                         type=int,
@@ -65,7 +45,9 @@ def get_args():
 
 def main():
     args = get_args()
-    print_hist(bx_multiplicity(args.reads), args.bin_width, args.output_file)
+    bx_mult = bx_multiplicity(args.reads)
+    multiplicities = [i for i in bx_mult.values()]
+    print_histogram(multiplicities, args.bin_width, args.output_file)
 
 if __name__ == "__main__":
     main()
