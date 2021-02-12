@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Read a FASTA/FASTQ file.
+Written by Heng Li
 See https://github.com/lh3/readfq
 """
 
