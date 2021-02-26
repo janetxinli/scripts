@@ -19,7 +19,7 @@ def find_complete_sequences(fasta, outfile):
                 header = line.strip()
             else:
                 seq = line.strip()
-                if seq.startswith("M") and seq.endswith("*"):
+                if seq.startswith("M") and seq.endswith("*") and "*" not in seq[1:-1]:
                     print(header, seq, sep="\n", file=outfh)
     outfh.close()
 
