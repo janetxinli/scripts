@@ -21,11 +21,11 @@ def find_complete_sequences(fasta, outfile, mode):
                 header = line.strip()
             else:
                 seq = line.strip()
+                seq_id = re.search(id_re, header)[1]
                 if seq.startswith("M") and seq.endswith("*") and "*" not in seq[1:-1]:
                     if mode == "fasta":
-                        print(header, seq, sep="\n", file=outfh)
+                        print(">{}".format(seq_id), seq, sep="\n", file=outfh)
                     else:
-                        seq_id = re.search(id_re, header)[1]
                         print(seq_id, file=outfh)
                         
     outfh.close()
@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument("-m", "--mode",
                         type=str,
                         choices=["fasta", "id"],
+                        default="fasta",
                         help="Ouptut mode; 'fasta' for printing valid sequences in fasta format"
                              "'id' for printing valid sequence IDs")
     return parser.parse_args()
