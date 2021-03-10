@@ -84,7 +84,7 @@ class AntismashJson:
             similarity = int((hits / num_prots) * 100)
             return acc, desc, similarity
         else:
-            return "", "", "", ""
+            return "", "", ""
 
     def parse_and_print(self, outfh):
         """Parses JSON and prints to file handle."""
@@ -98,11 +98,11 @@ class AntismashJson:
                     start, end = self.get_location(i)
                     clust_type = self.get_type(i)
                     acc, desc, sim = self.get_known_cluster(i, region_no)
-                    if (acc, desc, clust_type, sim) != ("", "", ""):
+                    if (acc, desc, sim) != ("", "", ""):
                         print(print_name, scaf, region_no, start, end, "1",
                               acc, desc, clust_type, sim, sep="\t", file=outfh)
                     else:
-                        acc, desc, clust_type, sim = self.get_best_hit(i, region_no)
+                        acc, desc, sim = self.get_best_hit(i, region_no)
                         print(print_name, scaf, region_no, start, end, "0",
                               acc, desc, clust_type, sim, sep="\t", file=outfh)
     
