@@ -40,13 +40,13 @@ class AntismashJson:
                 loc = f["location"].strip("[]").split(":")
                 return loc[0], loc[1]
 
-    def get_type(self, idx):
+    def get_type(self, idx, region_no):
         """
         Returns the cluster type for a given record. If multiple types are 
         defined, they are separated by "-".
         """
         for f in self.data[idx]["features"]:
-            if f["type"] == "region":
+            if f["type"] == "region" and f["qualifiers"]["region_number"][0] == str(region_no):
                 clust_type = "-".join(f["qualifiers"]["product"])
                 return clust_type
     
@@ -61,10 +61,10 @@ class AntismashJson:
         if sub_dict["total_hits"] > 0:
             acc = sub_dict["ranking"][0][0]["accession"]
             desc = sub_dict["ranking"][0][0]["description"]
-            num_prots = len(sub_dict["ranking"][0][0]["proteins"])
+            #num_prots = len(sub_dict["ranking"][0][0]["proteins"])
             hits = sub_dict["ranking"][0][1]["hits"]
-            similarity = int((hits / num_prots) * 100)
-            return acc, desc, similarity
+            #similarity = int((hits / num_prots) * 100)
+            return acc, desc, hits
         else:
             return "", "", ""
     
@@ -77,12 +77,12 @@ class AntismashJson:
         sub_dict = self.data[idx]["modules"]["antismash.modules.clusterblast"] \
             ["general"]["results"][region_no - 1]["ranking"]
         if len(sub_dict) > 0:
-            acc = sub_dict[0][0]["accession"]
+            acc = sub_dict[0][0]["accession"] + "_" + sub_dict[0][0]["cluster_label"]
             desc = sub_dict[0][0]["description"]
-            num_prots = len(sub_dict[0][0]["proteins"])
+            #num_prots = len(sub_dict[0][0]["proteins"])
             hits = sub_dict[0][1]["hits"]
-            similarity = int((hits / num_prots) * 100)
-            return acc, desc, similarity
+            #similarity = int((hits / num_prots) * 100)
+            return acc, desc, hits
         else:
             return "", "", ""
 
@@ -96,7 +96,7 @@ class AntismashJson:
                     region_no = int(f["qualifiers"]["region_number"][0])
                     scaf = self.get_scaffold(i)
                     start, end = self.get_location(i)
-                    clust_type = self.get_type(i)
+                    clust_type = self.get_type(i, region_no)
                     acc, desc, sim = self.get_known_cluster(i, region_no)
                     if (acc, desc, sim) != ("", "", ""):
                         print(print_name, scaf, region_no, start, end, "1",
@@ -147,7 +147,7 @@ def main():
         outfh = open(args.outfile, "w+")
     
     print("sample\tscaffold\tregion_no\tstart\tend\tknown_cluster\taccession\t"
-          "description\tcluster_type\tsimilarity", file=outfh)
+          "description\tcluster_type\thits", file=outfh)
     for i, json_file in enumerate(args.files):
         content = AntismashJson(json_file, args.names[i])
         content.parse_and_print(args.outfile)
