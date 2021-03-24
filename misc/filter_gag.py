@@ -42,7 +42,7 @@ def filter_fasta(first_header, infh, valid_ids, outfh):
 
 def filter_gff(infh, valid_ids, valid_genes, outfh):
     """Filter a gff file."""
-    id_re = "ID=([\w\.-]+):|;.+"  # fix this to match end of line
+    id_re = "ID=([\w\.-]+)[;|:].+"  # fix this to match end of line
     for line in infh:
         line = line.strip().split("\t")
         feature_type = line[2]
