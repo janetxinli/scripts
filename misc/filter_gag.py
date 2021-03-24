@@ -42,17 +42,20 @@ def filter_fasta(first_header, infh, valid_ids, outfh):
 
 def filter_gff(infh, valid_ids, valid_genes, outfh):
     """Filter a gff file."""
-    id_re = "ID=([\w\.-]+)[;|:].+"  # fix this to match end of line
+    id_re = "ID=([\w\.-]+)[;|:].+"
     for line in infh:
         line = line.strip().split("\t")
         feature_type = line[2]
         info = line[8]
         if feature_type == "gene":
             cur_gene = info.split("=")[1]
+            line[8] = info + ";Name={}".format(cur_gene)
             if cur_gene in valid_genes:
                 print(*line, sep="\t", file=outfh)
         else:
             cur_id = re.search(id_re, info)[1]
+            if feature_type == "mRNA":
+                line[8] = info + ";Name={}".format(cur_id)
             if cur_id in valid_ids:
                 print(*line, sep="\t", file=outfh)
 
