@@ -12,14 +12,20 @@ def parse_mibig_gbk(genbank):
     with open(genbank, "r") as fh:
         for record in SeqIO.parse(fh, "gb"):
             for feature in record.features:
-                if feature.type == "CDS" and "protein_id" in feature.qualifiers:
-                    protein_id = feature.qualifiers["protein_id"][0]
+                if feature.type == "CDS":
                     gene_info = {}
-                    gene_info["product"] = feature.qualifiers["product"][0]
+                    if "protein_id" in feature.qualifiers:
+                        protein_id = feature.qualifiers["protein_id"][0]
+                    elif "locus_tag" in feature.qualifiers:
+                        protein_id = feature.qualifiers["locus_tag"][0]
+                    elif "gene" in feature.qualifiers:
+                        protein_id = feature.qualifiers["gene"][0]
+                    if "product" in feature.qualifiers:
+                        gene_info["product"] = feature.qualifiers["product"][0]
                     if "gene_kind" in feature.qualifiers:
                         gene_info["gene_kind"] = feature.qualifiers["gene_kind"][0]
                     if "gene_functions" in feature.qualifiers:
-                        gene_info["gene_functions"] = feature.qualifiers["gene_functions"]
+                        gene_info["gene_functions"] = feature.qualifiers["gene_functions"]                        
                     cluster[protein_id] = gene_info
     return cluster
 
