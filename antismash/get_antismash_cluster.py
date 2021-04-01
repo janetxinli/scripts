@@ -5,9 +5,9 @@ import argparse
 import json
 from misc import parse_mibig_gbk
 
-def print_cluster_info(ref, hits):
+def print_cluster_info(ref, hits, scaffold):
     """Summarize AntiSMASH hits and misses."""
-    print("protein_id\tmatch_id\tproduct\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity")
+    print("protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\tproduct\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity")
     matches = set()
     for pairing in hits:
         prot_id = pairing[2]["locus_tag"] 
@@ -18,21 +18,24 @@ def print_cluster_info(ref, hits):
                 file=sys.stderr)
             sys.exit(1)
         match_id = pairing[0]
+        match_start = ref[prot_id]["start"]
+        match_end = ref[prot_id]["end"]
         product = ref[prot_id]["product"]
         kind = ref[prot_id]["gene_kind"] if "gene_kind" in ref[prot_id] else "NA"
         fn = ",".join(ref[prot_id]["gene_functions"]) if "gene_functions" in ref[prot_id] else "NA"
         hit = 1
         cov = pairing[2]["perc_coverage"]
         identity = pairing[2]["perc_ident"]
-        print(prot_id, match_id, product, kind,
-              fn, hit, cov, identity, sep="\t")
+        print(prot_id, match_id, scaffold, match_start, match_end,
+              product, kind, fn, hit, cov, identity, sep="\t")
     
     remaining = [i for i in ref if i not in matches]
     for r in remaining:
         product = ref[r]["product"]
         kind = ref[r]["gene_kind"] if "gene_kind" in ref[r] else "NA"
         fn = ref[r]["gene_functions"] if "gene_functions" in ref[r] else "NA"
-        print(r, "NA", product, kind, fn, 0, "NA", "NA", sep="\t")
+        print(r, "NA", "NA", "NA", "NA", product, kind, fn,
+              0, "NA", "NA", sep="\t")
 
 
 def find_cluster(json_file, cluster_id):
@@ -50,9 +53,9 @@ def find_cluster(json_file, cluster_id):
                     knowncluster = record["modules"]["antismash.modules.clusterblast"]["knowncluster"]\
                         ["results"][region_no-1]
                     if knowncluster["total_hits"] > 0 and knowncluster["ranking"][0][0]["accession"] == cluster_id:
-                        return knowncluster["ranking"][0][1]["pairings"]
+                        return knowncluster["ranking"][0][1]["pairings"], knowncluster["record_id"]
         
-        return None
+        return None, None
 
 def parse_args():
     """Parse command line arguments."""
@@ -73,11 +76,11 @@ def parse_args():
 def main():
     args = parse_args()
     cluster_ref = parse_mibig_gbk(args.genbank)
-    antismash_cluster = find_cluster(args.json, args.cluster)
+    antismash_cluster, match_scaf = find_cluster(args.json, args.cluster)
     if antismash_cluster is None:
         print("error: cluster not found in AntiSMASH JSON {}".format(args.json), file=sys.stderr)
         sys.exit(1)
-    print_cluster_info(cluster_ref, antismash_cluster)
+    print_cluster_info(cluster_ref, antismash_cluster, match_scaf)
     
 
 if __name__ == "__main__":
