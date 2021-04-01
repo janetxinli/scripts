@@ -12,7 +12,7 @@ def parse_mibig_gbk(genbank):
     with open(genbank, "r") as fh:
         for record in SeqIO.parse(fh, "gb"):
             for feature in record.features:
-                if feature.type == "CDS":
+                if feature.type == "CDS" and "protein_id" in feature.qualifiers:
                     protein_id = feature.qualifiers["protein_id"][0]
                     gene_info = {}
                     gene_info["product"] = feature.qualifiers["product"][0]
