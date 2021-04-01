@@ -17,7 +17,7 @@ def print_cluster_info(ref, hits, print_name=False):
                 file=sys.stderr)
             sys.exit(1)
         match_id = pairing[0]
-        product = ref[prot_id]["product"]
+        product = ref[prot_id]["product"] if "product" in ref[prot_id] else "NA"
         kind = ref[prot_id]["gene_kind"] if "gene_kind" in ref[prot_id] else "NA"
         fn = ",".join(ref[prot_id]["gene_functions"]) if "gene_functions" in ref[prot_id] else "NA"
         hit = 1
@@ -29,9 +29,9 @@ def print_cluster_info(ref, hits, print_name=False):
     
     remaining = [i for i in ref if i not in matches]
     for r in remaining:
-        product = ref[r]["product"]
+        product = ref[r]["product"] if "product" in ref[r] else "NA"
         kind = ref[r]["gene_kind"] if "gene_kind" in ref[r] else "NA"
-        fn = ref[r]["gene_functions"] if "gene_functions" in ref[r] else "NA"
+        fn = ",".join(ref[r]["gene_functions"]) if "gene_functions" in ref[r] else "NA"
         name = print_name if print_name else ""
         print(r, "NA", product, kind, fn, 0, "NA", "NA", name, sep="\t")
 
