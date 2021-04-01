@@ -30,13 +30,13 @@ class AntismashJson:
         """Returns the scaffold ID for a given record index."""
         return self.data[idx]["id"]
     
-    def get_location(self, idx):
+    def get_location(self, idx, region_no):
         """
         Returns the location of a region along a scaffold for a given
         record index as a tuple of (start, stop).
         """
         for f in self.data[idx]["features"]:
-            if f["type"] == "region":
+            if f["type"] == "region" and int(f["qualifiers"]["region_number"][0]) == region_no:
                 loc = f["location"].strip("[]").split(":")
                 return loc[0], loc[1]
 
@@ -95,7 +95,7 @@ class AntismashJson:
                 if f["type"] == "region":
                     region_no = int(f["qualifiers"]["region_number"][0])
                     scaf = self.get_scaffold(i)
-                    start, end = self.get_location(i)
+                    start, end = self.get_location(i, region_no)
                     clust_type = self.get_type(i, region_no)
                     acc, desc, sim = self.get_known_cluster(i, region_no)
                     if (acc, desc, sim) != ("", "", ""):
