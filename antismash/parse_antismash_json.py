@@ -47,7 +47,7 @@ class AntismashJson:
         """
         for f in self.data[idx]["features"]:
             if f["type"] == "region" and f["qualifiers"]["region_number"][0] == str(region_no):
-                clust_type = "-".join(f["qualifiers"]["product"])
+                clust_type = ";".join(f["qualifiers"]["product"])
                 return clust_type
     
     def get_known_cluster(self, idx, region_no):
