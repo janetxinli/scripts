@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sys
 import argparse
 import json
@@ -7,6 +8,7 @@ from antismash import parse_mibig_gbk
 
 def print_cluster_info(ref, hits, scaffold, print_name=False):
     """Summarize AntiSMASH hits and misses."""
+    match_re = "input\|c[\d]+\|(\d+)-(\d+)\|([-|+])\|(.+)\|"
     matches = set()
     for pairing in hits:
         prot_id = pairing[2]["locus_tag"] 
@@ -16,17 +18,20 @@ def print_cluster_info(ref, hits, scaffold, print_name=False):
             print("error: AntiSMASH output cluster {} not found in ref".format(prot_id),
                 file=sys.stderr)
             sys.exit(1)
-        match_id = pairing[0]
+
         product = ref[prot_id]["product"] if "product" in ref[prot_id] else "NA"
-        match_start = pairing[2]["start"]
-        match_end = pairing[2]["end"]
+        match_search = re.search(match_re, pairing[0])
+        match_start = match_search[1]
+        match_end = match_search[2]
+        match_dir = match_search[3]
+        match_id = match_search[4]
         kind = ref[prot_id]["gene_kind"] if "gene_kind" in ref[prot_id] else "NA"
         fn = ",".join(ref[prot_id]["gene_functions"]) if "gene_functions" in ref[prot_id] else "NA"
         hit = 1
         cov = pairing[2]["perc_coverage"]
         identity = pairing[2]["perc_ident"]
         name = print_name if print_name else ""
-        print(prot_id, match_id, scaffold, match_start, match_end,
+        print(prot_id, match_id, scaffold, match_start, match_end, match_dir,
               product, kind, fn, hit, cov, identity, name, sep="\t")
     
     remaining = [i for i in ref if i not in matches]
@@ -35,7 +40,7 @@ def print_cluster_info(ref, hits, scaffold, print_name=False):
         kind = ref[r]["gene_kind"] if "gene_kind" in ref[r] else "NA"
         fn = ",".join(ref[r]["gene_functions"]) if "gene_functions" in ref[r] else "NA"
         name = print_name if print_name else ""
-        print(r, "NA", "NA", "NA", "NA", product, kind,
+        print(r, "NA", "NA", "NA", "NA", "NA", product, kind,
               fn, 0, "NA", "NA", name, sep="\t")
 
 
@@ -103,15 +108,14 @@ def main():
         print("error: provide either a single AntiSMASH JSON output file or a file of files")
     
     cluster_ref = parse_mibig_gbk(args.genbank)
-
+    header = "protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\tmatch_dir\t"
+              "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity"
     if args.json:
-        print("protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\t"
-              "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity")
+        print(header)
         run(args.json, cluster_ref, args.cluster)
     elif args.fof:
         files = read_fof(args.fof)
-        print("protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\t"
-              "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity\tname")
+        print(header)
         for f in files:
             run(f, cluster_ref, args.cluster, print_name=f)
 
