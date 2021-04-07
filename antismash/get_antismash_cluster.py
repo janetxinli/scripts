@@ -108,14 +108,14 @@ def main():
         print("error: provide either a single AntiSMASH JSON output file or a file of files")
     
     cluster_ref = parse_mibig_gbk(args.genbank)
-    header = "protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\tmatch_dir\t"
-              "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity"
+    header = ("protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\tmatch_dir\t"
+              "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity")
     if args.json:
         print(header)
         run(args.json, cluster_ref, args.cluster)
     elif args.fof:
         files = read_fof(args.fof)
-        print(header)
+        print(header + "\tname")
         for f in files:
             run(f, cluster_ref, args.cluster, print_name=f)
 
