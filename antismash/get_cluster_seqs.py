@@ -7,19 +7,7 @@ Pull MIBiG cluster nucleotide sequences from MIBiG GenBank file
 import sys
 import argparse
 from Bio import SeqIO
-
-def get_cluster_record(gb, id):
-    """
-    Get specified cluster record from GenBank file from its ID.
-    Returns None if no record is present with the name id in the
-    GenBank file.
-    """
-    full = SeqIO.parse(gb, "gb")
-    for record in full:
-        if record.name == id:
-            return record
-
-    return None  # Cluster not found
+from antismash import get_cluster_record
 
 def print_seqs(record):
     """Extract and print feature sequences from GenBank record."""

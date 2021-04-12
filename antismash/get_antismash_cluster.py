@@ -4,7 +4,7 @@ import re
 import sys
 import argparse
 import json
-from antismash import parse_mibig_gbk
+from antismash import *
 
 def print_cluster_info(ref, hits, scaffold, print_name=False):
     """Summarize AntiSMASH hits and misses."""
@@ -84,7 +84,7 @@ def parse_args():
                                      usage="usage: get_antismash_cluster.py [-h] [-j [JSON] or -f [IN]] genbank cluster")
     parser.add_argument("genbank",
                         type=str,
-                        help="AntiSMASH cluster GenBank file")
+                        help="MIBiG cluster GenBank file")
     parser.add_argument("cluster",
                         type=str,
                         help="ID of cluster of interest")
@@ -107,7 +107,13 @@ def main():
     if args.json and args.fof:
         print("error: provide either a single AntiSMASH JSON output file or a file of files")
     
-    cluster_ref = parse_mibig_gbk(args.genbank)
+    cluster_record = get_cluster_record(args.genbank, args.cluster)
+    
+    if cluster_record is None:
+        print("error: cluster {} not found in MIBiG GenBank file".format(args.cluster))
+        sys.exit(1)
+    
+    cluster_ref = get_cluster_info(cluster_record)
     header = ("protein_id\tmatch_id\tmatch_scaf\tmatch_start\tmatch_end\tmatch_dir\t"
               "product\tgene_kind\tgene_fn\thit\tperc_cov\tperc_identity")
     if args.json:
