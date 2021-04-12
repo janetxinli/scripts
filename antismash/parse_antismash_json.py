@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
 Parse antiSMASH JSON output (regions and KnownClusterBlast best hits) and print to TSV.
-Output fields:
-sample: file name/sample named
-scaffold: scaffold ID that region belongs to
-region_no: region number
-start: start position of region on scaffold
-end: end position of region on scaffold
-best_hit_acc: MiBIG accession best KnownClusterBlast hit (if available)
-best_hit_desc: MiBIG description of best KnownCluseterBlast hit (if available)
-best_hit_sim: Similarity (%) of cluster to best KnownClusterBlast hit (if available) 
+Takes a single JSON or a file of files in the following format:
+name1\tfile1
+name2\tfile2
+name4\tfile3
+or
+file1
+file2
+file3
 """
 
 __author__ = "janetxinli"
@@ -61,9 +60,7 @@ class AntismashJson:
         if sub_dict["total_hits"] > 0:
             acc = sub_dict["ranking"][0][0]["accession"]
             desc = sub_dict["ranking"][0][0]["description"]
-            #num_prots = len(sub_dict["ranking"][0][0]["proteins"])
             hits = sub_dict["ranking"][0][1]["hits"]
-            #similarity = int((hits / num_prots) * 100)
             return acc, desc, hits
         else:
             return "", "", ""
@@ -79,9 +76,7 @@ class AntismashJson:
         if len(sub_dict) > 0:
             acc = sub_dict[0][0]["accession"] + "_" + sub_dict[0][0]["cluster_label"]
             desc = sub_dict[0][0]["description"]
-            #num_prots = len(sub_dict[0][0]["proteins"])
             hits = sub_dict[0][1]["hits"]
-            #similarity = int((hits / num_prots) * 100)
             return acc, desc, hits
         else:
             return "", "", ""
@@ -111,18 +106,44 @@ class AntismashJson:
         self.fh.close()
 
 
+def get_file_info(filename):
+    """
+    Reads a file of names and json files and returns a
+    tuple of names, files
+    """
+    names = []
+    files = []
+    with open(filename, "r") as fh:
+        for line in fh:
+            line = line.strip().split("\t")
+            if len(line) == 2:
+                names.append(line[0])
+                files.append(line[1])
+            elif len(line) == 1:  # Assuming no name is provided
+                names.append(None)
+                files.append(line[0])
+            else:
+                print("error: file of files {} formatted incorrectly".format(filename))
+                sys.exit(1)
+    
+    return names, files
+
+
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Parse antiSMASH json output and summarize regions")
-    parser.add_argument("files",
-                        type=str,
-                        help="Files to be summarized (separated by spaces and surrounded by quotation "
-                             "marks if more than one, e.g. 'file1.json file2.json file2.json')")
-    parser.add_argument("-n", "--names",
+    parser.add_argument("-j", "--json",
                         type=str,
                         default=None,
-                        help="Matching names for files given (also separated by spaces and surrounded "
-                             "by quotation marks) (optional)")
+                        help="antiSMASH JSON file to be analysed")
+    parser.add_argument("-n", "--name",
+                        type=str,
+                        default=None,
+                        help="Matching name for JSON file given")
+    parser.add_argument("-f", "--fof",
+                        type=str,
+                        default=None,
+                        help="File of antismash JSON files and optional names")
     parser.add_argument("-o", "--outfile",
                         default=None,
                         help="Output file for printing results [stdout]")
@@ -131,15 +152,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    args.files = args.files.split(" ")
 
-    if args.names is not None:
-        args.names = args.names.split(" ")
-        if len(args.files) != len(args.names):
-            print("error: number of files and names must be equal")
-            sys.exit(1)
+    if args.json and args.fof:
+        print("error: provide either a single json file or file of files")
+        sys.exit(1)
+    
+    if args.fof:
+        names, files = get_file_info(args.fof)
     else:
-        args.names = [None] * len(args.files)
+        names = [args.name]
+        files = [args.json]
     
     if args.outfile is None:
         outfh = sys.stdout
@@ -148,8 +170,8 @@ def main():
     
     print("sample\tscaffold\tregion_no\tstart\tend\tknown_cluster\taccession\t"
           "description\tcluster_type\thits", file=outfh)
-    for i, json_file in enumerate(args.files):
-        content = AntismashJson(json_file, args.names[i])
+    for i, json_file in enumerate(files):
+        content = AntismashJson(json_file, names[i])
         content.parse_and_print(args.outfile)
         content.close()
     outfh.close()
