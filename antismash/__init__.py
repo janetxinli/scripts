@@ -1,1 +1,1 @@
-from .parse_mibig_gbk import parse_mibig_gbk
+from .parse_mibig_gbk import get_cluster_record, get_cluster_info
