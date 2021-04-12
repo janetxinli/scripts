@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""
+Find common and group-specific antiSMASH clusters. Requires summary .tsv file (output
+from parse_antismash_json.py).
+
+For group-specific antiSMASH clusters, provide a .txt file defining groups in the
+following format:
+group_name\tsample1,sample2,sample3
+
+Sample names must be present in summary .tsv file.
+"""
 
 import sys
 import argparse
@@ -34,9 +44,8 @@ def find_group_specific(known_clusters, groups, outfile):
                         sample_specific_clust.add(s)
                     group_clusters.append(sample_specific_clust)
             group_specific_clusters = set.intersection(*group_clusters)
-            if len(group_specific_clusters) > 0:
-                  for cluster in group_specific_clusters:
-                      print(n, cluster[0], cluster[1], cluster[2], sep="\t", file=outfh)
+            for cluster in group_specific_clusters:
+                print(n, cluster[0], cluster[1], cluster[2], sep="\t", file=outfh)
 
 def find_clusters(filename):
     """
@@ -62,9 +71,25 @@ def find_clusters(filename):
 
     return known_clusters
 
+def parse_groups(txt):
+    """
+    Parse text file containing groups. Returns a dictionary mapping
+    group -> [samples].
+    """
+    groups = {}
+    with open(txt, "r") as fh:
+        for line in fh:
+            line = line.strip().split("\t")
+            if len(line) != 2:
+                print("error: group text file {} formatted incorrectly".format(txt))
+                sys.exit(1)
+            groups[line[0]] = line[1].split(",")
+    
+    return groups
+
 def parse_args():
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(description="Find common and group-specific"
+    parser = argparse.ArgumentParser(description="Find common and group-specific "
                                      "clusters in an antismash tsv summary file")
     parser.add_argument("summary",
                         type=str,
@@ -72,11 +97,15 @@ def parse_args():
     parser.add_argument("-p", "--out_prefix",
                         type=str,
                         default=None,
-                        help="Output file prefix [none]")
+                        help="Output file prefix")
+    parser.add_argument("-g", "--groups",
+                        type=str,
+                        default=None,
+                        help="Text file containing groups (leave blank to only search "
+                             "common clusters)")
     return parser.parse_args()
 
-
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     if args.out_prefix is None:
@@ -91,22 +120,12 @@ if __name__ == "__main__":
     common_clust_file = args.out_prefix + "common_clusters.tsv"
     common_clusters = find_common(clusters, common_clust_file)
 
-    groups = {"I": ["JB-39", "JB-40", "JB-43"],
-              "II": ["JB-41", "JB-42", "JB-44", "JB-45"],
-              "III": ["JB-46"]}
-
-    strains = {"UAMH299": ["JB-39", "JB-40"],
-               "UAMH298": ["JB-41", "JB-42"],
-               "UAMH1076": ["JB-43"],
-               "ANT-03": ["JB-44"],
-               "UAMH4510": ["JB-45"],
-               "110.25": ["JB-46"]}
-
     # Find group specific clusters
-    group_specific_file = args.out_prefix + "group_specific_clusters.tsv"
-    find_group_specific(clusters, groups, group_specific_file)
+    if not args.groups is None:
+        sample_groups = parse_groups(args.groups)
+        group_clust_file = args.out_prefix + "group_specific_clusters.tsv"
+        find_group_specific(clusters, sample_groups, group_clust_file)
 
-    # Find strain specific clusters
-    strain_specific_file = args.out_prefix + "strain_specific_clusters.tsv"
-    find_group_specific(clusters, strains, strain_specific_file)
-        
+
+if __name__ == "__main__":
+    main()
