@@ -7,7 +7,7 @@ For group-specific antiSMASH clusters, provide a .txt file defining groups in th
 following format:
 group_name\tsample1,sample2,sample3
 
-Sample names must be present in summary .tsv file.
+Sample names must be identical to those in the summary .tsv file.
 """
 
 import sys
@@ -103,6 +103,10 @@ def parse_args():
                         default=None,
                         help="Text file containing groups (leave blank to only search "
                              "common clusters)")
+    parser.add_argument("-n", "--no_common",
+                        default=False,
+                        action="store_true",
+                        help="Do not search for common clusters")
     return parser.parse_args()
 
 def main():
@@ -115,10 +119,11 @@ def main():
 
     # Load all clusters
     clusters = find_clusters(args.summary)
-
+ 
     # Find common clusters
-    common_clust_file = args.out_prefix + "common_clusters.tsv"
-    common_clusters = find_common(clusters, common_clust_file)
+    if not args.no_common:
+        common_clust_file = args.out_prefix + "common_clusters.tsv"
+        common_clusters = find_common(clusters, common_clust_file)
 
     # Find group specific clusters
     if not args.groups is None:
