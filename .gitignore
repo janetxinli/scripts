@@ -1,4 +1,8 @@
 __pycache__
 .vscode
 env
-**/*.tsv
+*.tsv
+*.txt
+*.fa
+*.gbk
+*.json
