@@ -10,7 +10,8 @@ def load_orthogroups(tsv):
 
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
-        total_species = len(header) - 3  # 3 extra columns in N0.tsv file
+        species = header[3:]
+        total_species = len(species)
 
         for line in fh:
             line = line.strip().split("\t")
@@ -18,7 +19,7 @@ def load_orthogroups(tsv):
             og = line[1]
             orthogroups[og] = ortho_genes
     
-    return orthogroups
+    return orthogroups, species
 
 
 def parse_args():
@@ -49,10 +50,11 @@ def main():
     }
     
     og_to_print = {k for k, v in get_orthogroup_genes(args.tsv).items() if tests[args.orth_type](v)}
-    orthogroups = load_orthogroups(args.tsv)
+    orthogroups, species = load_orthogroups(args.tsv)
 
     outfile = sys.stdout if args.outfile is None else open(args.outfile, "w+")
-
+    print("OG", *species, sep="\t", file=outfile)
+    
     for o in orthogroups:
         if o in og_to_print:
             print(o, *orthogroups[o], sep="\t", file=outfile)
