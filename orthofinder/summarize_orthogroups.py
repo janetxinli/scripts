@@ -23,7 +23,7 @@ def is_single_core(orthogroup):
     return True
 
 def is_accessory(orthogroup):
-    """Tests whether 2+ genes have an orthogroup."""
+    """Tests whether 2+ species have an orthogroup."""
     contains = 0
     for sp in orthogroup:
         if sp > 0:
@@ -34,12 +34,12 @@ def is_accessory(orthogroup):
 def is_singleton(orthogroup):
     return orthogroup.count(0) == len(orthogroup) - 1
 
-def read_orthogroups(tsv):
+def get_orthogroup_genes(tsv):
     """
     Read orthogroups file. Returns a dictionary mapping orthogroups
     to number of genes in each species.
     """
-    orthogroups = {}  # orthogroup --> [num genes in each orthogroup]
+    orthogroups = {}  # orthogroup -> [num genes in each species]
     
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
@@ -77,8 +77,10 @@ def summarize_orthogroups(orthogroups, outfile=None):
     single_core = 0
     acc = 0
     singleton = 0
+    total = 0
 
     for og in orthogroups:
+        total += 1
         if is_core(orthogroups[og]):
             core += 1
             if is_single_core(orthogroups[og]):
@@ -89,6 +91,7 @@ def summarize_orthogroups(orthogroups, outfile=None):
             singleton += 1
     
     print("type\tcategory\tcount", file=outfh)
+    print(f"total\tall\t{total}", file=outfh)
     print(f"core\tall\t{core}", file=outfh)
     print(f"core\tsingle_copy\t{single_core}", file=outfh)
     print(f"accessory\tall\t{acc}", file=outfh)
@@ -113,7 +116,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    orthogroups = read_orthogroups(args.tsv)
+    orthogroups = get_orthogroup_genes(args.tsv)
     summarize_orthogroups(orthogroups, args.outfile)
 
 
