@@ -24,12 +24,8 @@ def is_single_core(orthogroup):
 
 def is_accessory(orthogroup):
     """Tests whether 2+ species have an orthogroup."""
-    contains = 0
-    for sp in orthogroup:
-        if sp > 0:
-            contains += 1
-    
-    return contains >= 2
+    zeros = orthogroup.count(0)
+    return zeros > 0 and zeros <= len(orthogroup) - 2
 
 def is_singleton(orthogroup):
     return orthogroup.count(0) == len(orthogroup) - 1
