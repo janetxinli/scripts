@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-from orthofinder import *
+from orthofinder import is_core, is_single_core, is_accessory, is_singleton, get_orthogroup_genes
 
 def load_orthogroups(tsv):
     """Load all orthogroups from file."""
@@ -21,6 +21,30 @@ def load_orthogroups(tsv):
     
     return orthogroups, species
 
+def print_table(orthogroups, og_to_print, species, outfile=None):
+    """Print orthogroups in table format."""
+
+    outfh = sys.stdout if outfile is None else open(outfile, "w+")
+    print("OG", *species, sep="\t", file=outfh)
+    
+    for o in orthogroups:
+        if o in og_to_print:
+            print(o, *orthogroups[o], sep="\t", file=outfh)
+    
+    if not outfile is None:
+        outfh.close()
+
+def print_list(orthogroups, og_to_print, outfile=None):
+    """Print orthogroup genes in lsit format."""
+    outfh = sys.stdout if outfile is None else open(outfile, "w+")
+    orthogroups = [[i.split(", ") for i in v] for k, v in orthogroups.items() if k in og_to_print]
+    for og in orthogroups:
+        for genes in og:
+            if genes[0] != "":
+                print(*genes, sep="\n", file=outfh)
+    
+    if not outfile is None:
+        outfh.close()
 
 def parse_args():
     """Get the command line arguments."""
@@ -37,6 +61,11 @@ def parse_args():
                         type=str,
                         default=None,
                         help="Output file [stdout]")
+    parser.add_argument("-f", "--format",
+                        default="table",
+                        choices=["table", "t", "list", "l"],
+                        help="Output format: table (t) of orthogroups by species "
+                             "or a simple list (l) of genes")
     
     return parser.parse_args()
 
@@ -52,15 +81,11 @@ def main():
     og_to_print = {k for k, v in get_orthogroup_genes(args.tsv).items() if tests[args.orth_type](v)}
     orthogroups, species = load_orthogroups(args.tsv)
 
-    outfile = sys.stdout if args.outfile is None else open(args.outfile, "w+")
-    print("OG", *species, sep="\t", file=outfile)
+    if args.format == "table" or args.format == "t":
+        print_table(orthogroups, og_to_print, species, args.outfile)
     
-    for o in orthogroups:
-        if o in og_to_print:
-            print(o, *orthogroups[o], sep="\t", file=outfile)
-    
-    if not args.outfile is None:
-        outfile.close()
+    else:
+        print_list(orthogroups, og_to_print, args.outfile)
 
 
 if __name__ == "__main__":
