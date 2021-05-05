@@ -107,7 +107,7 @@ def print_distances(genes, repeats):
                     closest = left
                     closest_dist = max(0, left_dist)
                 else:
-                    if abs(left_dist) < abs(right_dist):
+                    if left_dist < right_dist:
                         closest = left
                         closest_dist = max(0, left_dist)
                     else:
