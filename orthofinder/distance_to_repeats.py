@@ -12,17 +12,15 @@ def load_repeats(gff):
     repeats = {}  # scaf -> [Interval]
     with open(gff, "r") as fh:
         for line in fh:
-
-            if line.startswith("#"):
-                continue
-            line = line.strip().split("\t")
-            cur_scaf = line[0]
-            if cur_scaf not in repeats:
-                repeats[cur_scaf] = []
-            start = int(line[3])
-            end = int(line[4])
-            info = line[8]
-            repeats[cur_scaf].append(Interval(info, start, end))
+            if not line.startswith("#"):
+                line = line.strip().split("\t")
+                cur_scaf = line[0]
+                if cur_scaf not in repeats:
+                    repeats[cur_scaf] = []
+                start = int(line[3])
+                end = int(line[4])
+                info = line[8]
+                repeats[cur_scaf].append(Interval(info, start, end))
 
 
     # Sort intervals
@@ -57,30 +55,29 @@ def load_orthogroup_genes(gene_names, gff):
     id_re = "ID=(JB-\w+-R[A-Z]+)\;.+"
     with open(gff, "r") as fh:
         for line in fh:
-            if line.startswith("#"):
-                continue
-            line = line.strip().split("\t")
-            if line[2] == "mRNA":
-                gene_id = re.match(id_re, line[8])[1]
-                if gene_id in gene_names:
-                    scaf = line[0]
-                    start = int(line[3])
-                    end = int(line[4])
-                    if scaf not in gene_info:
-                        gene_info[scaf] = []
+            if not line.startswith("#"):
+                line = line.strip().split("\t")
+                if line[2] == "mRNA":
+                    gene_id = re.match(id_re, line[8])[1]
+                    if gene_id in gene_names:
+                        scaf = line[0]
+                        start = int(line[3])
+                        end = int(line[4])
+                        if scaf not in gene_info:
+                            gene_info[scaf] = []
                     
-                    gene_info[scaf].append(Interval(gene_id, start, end))
+                        gene_info[scaf].append(Interval(gene_id, start, end))
 
-        # Sort genes by start pos
-        for scaf in gene_info:
-            gene_info[scaf].sort(key=lambda x: x.start)
+    # Sort genes by start pos
+    for scaf in gene_info:
+        gene_info[scaf].sort(key=lambda x: x.start)
 
     return gene_info
 
 def print_distances(genes, repeats):
     """Finds distances between genes and repeats."""
-    repeat_re = "\"(.+)\""
-    print("scaffold\tgene\tclosest_dist\tclosest_rep\toverlap")
+    #repeat_re = "\"(.+)\""
+    print("scaffold\tgene\tgene_start\tgene_end\tclosest_rep\trep_start\trep_end\tdist_to_rep")
     for scaf in genes:
         if scaf in repeats:
             i = 0
@@ -98,30 +95,27 @@ def print_distances(genes, repeats):
                 
                 left = repeat_intervals[i-1] if i > 0 else None
                 left_dist = gene_start - left.end if left is not None else "NA"
-                left_info = re.search(repeat_re, left.info)[1] if left is not None else "NA"
+                left_info = left.info if left is not None else "NA"
                 right = repeat_intervals[i] if i < num_reps else None
                 right_dist = right.start - gene_end if right is not None else "NA"
-                right_info = re.search(repeat_re, right.info)[1] if right is not None else "NA"
+                right_info = right.info if right is not None else "NA"
                 
                 if left_dist == "NA":
-                    closest_dist = right_dist
-                    closest_info = right_info
-                    overlap = right_dist < 0
+                    closest = right
+                    closest_dist = max(0, right_dist)  # set overlap distances (negative) to 0
                 elif right_dist == "NA":
-                    closest_dist = left_dist
-                    closest_info = left_info
-                    overlap = left_dist < 0
+                    closest = left
+                    closest_dist = max(0, left_dist)
                 else:
                     if abs(left_dist) < abs(right_dist):
-                        closest_dist = left_dist
-                        closest_info = left_info
-                        overlap = left_dist < 0
+                        closest = left
+                        closest_dist = max(0, left_dist)
                     else:
-                        closest_dist = right_dist
-                        closest_info = right_info
-                        overlap = right_dist < 0
+                        closest = right
+                        closest_dist = max(0, right_dist)
                 
-                print(scaf, gene.info, abs(closest_dist), closest_info, overlap, sep="\t")
+                print(scaf, gene.info, gene.start, gene.end,
+                      closest.info, closest.start, closest.end, closest_dist, sep="\t")
 
 
 def parse_args():
