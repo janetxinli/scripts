@@ -7,9 +7,9 @@ import requests
 import urllib.parse
 from orthofinder import load_orthogroups
 
-def load_gff(gff):
+def load_gff_go(gff):
     """Load GO terms for genes in a gff file."""
-    gene_go_terms = {}
+    gene_go_terms = {}  # mRNA ID -> [associated go terms]
     id_re = "ID=([^;]+)"
     go_re = "(GO:\d+)"
     with open(gff, "r") as fh:
@@ -97,7 +97,7 @@ def main():
     
     all_mrnas = {}
     for name in names_to_files:
-        mrnas = load_gff(names_to_files[name])
+        mrnas = load_gff_go(names_to_files[name])
         all_mrnas[name] = mrnas
     
     print_gmt(species, orthogroups, all_mrnas)
