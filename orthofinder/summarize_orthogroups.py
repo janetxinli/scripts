@@ -35,7 +35,7 @@ def get_orthogroup_genes(tsv):
     Read orthogroups file. Returns a dictionary mapping orthogroups
     to number of genes in each species.
     """
-    orthogroups = {}  # orthogroup -> [num genes in each species]
+    orthogroups = {}  # (HOG, OG) -> [num genes in each species]
     
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
@@ -43,6 +43,7 @@ def get_orthogroup_genes(tsv):
         
         for line in fh:
             line = line.strip().split("\t")
+            hog = line[0]
             og = line[1]
             og_info = []
             species_in_line = len(line) - 3
@@ -57,7 +58,7 @@ def get_orthogroup_genes(tsv):
                 for s in range(species_in_line, total_species):
                     og_info.append(0)
             
-            orthogroups[og] = og_info
+            orthogroups[(hog, og)] = og_info
     
     return orthogroups
 
@@ -101,7 +102,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Summarize OrthoFinder results")
     parser.add_argument("tsv",
                         type=str,
-                        help="OrthoFinder PhylogeneticHierarchicalOrthogroups/N0.tsv result file")
+                        help="OrthoFinder N0.tsv file")
     parser.add_argument("-o", "--outfile",
                         type=str,
                         default=None,

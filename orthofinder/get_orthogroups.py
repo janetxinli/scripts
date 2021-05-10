@@ -6,7 +6,7 @@ from orthofinder import is_core, is_single_core, is_accessory, is_singleton, get
 
 def load_orthogroups(tsv):
     """Load all orthogroups from file."""
-    orthogroups = {}  # OG -> [names of genes in each species]
+    orthogroups = {}  # (HOG, OG) -> [names of genes in each species]
 
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
@@ -16,8 +16,9 @@ def load_orthogroups(tsv):
         for line in fh:
             line = line.strip().split("\t")
             ortho_genes = line[3:]
+            hog = line[0]
             og = line[1]
-            orthogroups[og] = ortho_genes
+            orthogroups[(hog, og)] = ortho_genes
     
     return orthogroups, species
 
@@ -25,11 +26,11 @@ def print_table(orthogroups, og_to_print, species, outfile=None):
     """Print orthogroups in table format."""
 
     outfh = sys.stdout if outfile is None else open(outfile, "w+")
-    print("OG", *species, sep="\t", file=outfh)
+    print("HOG", "OG", *species, sep="\t", file=outfh)
     
     for o in orthogroups:
         if o in og_to_print:
-            print(o, *orthogroups[o], sep="\t", file=outfh)
+            print(o[0], o[1], *orthogroups[o], sep="\t", file=outfh)
     
     if not outfile is None:
         outfh.close()
@@ -51,7 +52,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Print core or accessory orthogroups")
     parser.add_argument("tsv",
                         type=str,
-                        help="OrthoFinder PhylogeneticHierarchicalOrthogroups/N0.tsv result file")
+                        help="OrthoFinder N0.tsv result file")
     parser.add_argument("-t", "--orth_type",
                         type=str,
                         default="core_single",
