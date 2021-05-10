@@ -10,7 +10,7 @@ from orthofinder import load_orthogroups
 def load_gff(gff):
     """Load GO terms for genes in a gff file."""
     gene_go_terms = {}
-    id_re = "ID=(JB-\w+-R[A-Z]+)\;.+"
+    id_re = "ID=([^;]+)"
     go_re = "(GO:\d+)"
     with open(gff, "r") as fh:
         for line in fh:

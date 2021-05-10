@@ -52,7 +52,7 @@ def load_gene_names(gene_names="-"):
 def load_orthogroup_genes(gene_names, gff):
     """Load information of mRNAs in gene_names from annotation gff."""
     gene_info = {}  # scaf -> [Interval]
-    id_re = "ID=(JB-\w+-R[A-Z]+)\;.+"
+    id_re = "ID=([^;]+)"
     with open(gff, "r") as fh:
         for line in fh:
             if not line.startswith("#"):
@@ -76,7 +76,6 @@ def load_orthogroup_genes(gene_names, gff):
 
 def print_distances(genes, repeats):
     """Finds distances between genes and repeats."""
-    #repeat_re = "\"(.+)\""
     print("scaffold\tgene\tgene_start\tgene_end\tclosest_rep\trep_start\trep_end\tdist_to_rep")
     for scaf in genes:
         if scaf in repeats:

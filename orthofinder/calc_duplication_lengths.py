@@ -28,7 +28,7 @@ def read_dups(infile="-"):
 
 def get_gene_lengths(gff):
     """Load all gene lengths from GFF file."""
-    gene_re = "ID=(JB-[0-9]{2}_\d+);.+"
+    gene_re = "ID=([^;]+)"
     gene_lengths = {}  # maker id -> gene length
     with open(gff, "r") as fh:
         for line in fh:
