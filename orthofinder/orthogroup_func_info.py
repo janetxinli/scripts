@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""
+Map orthogroups to GO terms and Pfam domains from a MAKER gff file.
+Selects the most common GO and Pfam annotations.
+"""
+
+import argparse
+import sys
+import re
+from orthofinder import load_orthogroups
+from gff import ID_RE, GO_RE, PFAM_RE
+
+def get_most_common(terms):
+    """
+    Given a dict mapping terms to occurrences, returns
+    the most common terms.
+    """
+    max_count = max(terms.values())
+    return [k for k, v in terms.items() if v == max_count]
+
+def mrna_functional_info(gff):
+    """
+    Get functional info (GO terms and Pfam domains) from
+    a MAKER gff file.
+    """
+    func = {}  # mrna_id -> ([go terms], [pfam domains])
+
+    with open(gff, "r") as fh:
+        for line in fh:
+            if not line.startswith("#"):
+                line = line.strip().split("\t")
+                if line[2] == "mRNA":
+                    info = line[8]
+                    mrna_id = re.search(ID_RE, info)[1]
+                    go_terms = re.findall(GO_RE, info)
+                    pfam_doms = re.findall(PFAM_RE, info)
+                    func[mrna_id] = (go_terms, pfam_doms)
+    
+    return func
+
+def print_orthogroup_func(orthogroups, func_info):
+    """Prints orthogroup GO terms."""
+    print("HOG", "OG", "go_terms", "pfam_domains", sep="\t")
+    for og in orthogroups:
+        og_mrnas = orthogroups[og]
+        og_go_terms = {}  # GO term -> occurrences
+        og_pfam_doms = {}  # Pfam domain -> occurrences
+        for mrna in og_mrnas:
+            if mrna != "" and mrna in func_info:
+                for go in func_info[mrna][0]:
+                    if go not in og_go_terms:
+                        og_go_terms[go] = 0
+                    
+                    og_go_terms[go] += 1
+                
+                for pfam in func_info[mrna][1]:
+                    if pfam not in og_pfam_doms:
+                        og_pfam_doms[pfam] = 0
+                    
+                    og_pfam_doms[pfam] += 1
+        
+        if len(og_go_terms) > 0:
+            max_count = max(og_go_terms.values())
+            og_go = [k for k, v in og_go_terms.items() if v == max_count]
+            go_to_print = ",".join(og_go)
+        else:
+            go_to_print = ""
+        
+        go_to_print = ",".join(og_go_terms) if len(og_go_terms) > 0 else ""
+        pfam_to_print = ",".join(og_pfam_doms) if len(og_pfam_doms) > 0 else ""
+
+        print(og[0], og[1], go_to_print, pfam_to_print, sep="\t")
+
+def parse_args():
+    """Parse the command line arguments."""
+    parser = argparse.ArgumentParser(description="Map orthogroups to most common "
+                                     "GO terms of orthogroup genes")
+    parser.add_argument("tsv",
+                        type=str,
+                        help="OrthoFinder N0.tsv file")
+    parser.add_argument("gff",
+                        nargs="*",
+                        type=str,
+                        help="GFF files for OrthoFinder run "
+                             "(in the same order as N0.tsv columns)")
+    
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    orthogroups, species = load_orthogroups(args.tsv)
+    if len(species) != len(args.gff):
+        print("orthogroup_go_terms.py: error: species in N0.tsv and gff files "
+              "provided is unequal")
+        sys.exit(1)
+    
+    # Load go terms in each gff file
+    all_func_info = {}
+    for gff in args.gff:
+        all_func_info.update(mrna_functional_info(gff))
+    
+    print_orthogroup_func(orthogroups, all_func_info)
+
+
+if __name__ == "__main__":
+    main()
