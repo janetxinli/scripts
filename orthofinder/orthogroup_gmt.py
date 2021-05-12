@@ -6,22 +6,22 @@ import argparse
 import requests
 import urllib.parse
 from orthofinder import load_orthogroups
+from gff import ID_RE, GO_RE
 
 def load_gff_go(gff):
     """Load GO terms for genes in a gff file."""
     gene_go_terms = {}  # mRNA ID -> [associated go terms]
-    id_re = "ID=([^;]+)"
-    go_re = "(GO:\d+)"
+
     with open(gff, "r") as fh:
         for line in fh:
             if not line.startswith("#"):
                 line = line.strip().split("\t")
                 if line[2] == "mRNA":
                     info = line[8]
-                    mrna_id = re.match(id_re, info)[1]
-                    go_terms = re.findall(go_re, info)
+                    mrna_id = re.match(ID_RE, info)[1]
+                    go_terms = re.findall(GO_RE, info)
                     if len(go_terms) > 0:
-                        for term in go_terms:
+                        for _ in go_terms:
                             gene_go_terms[mrna_id] = go_terms
     
     return gene_go_terms

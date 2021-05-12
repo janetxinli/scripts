@@ -11,7 +11,6 @@ def load_orthogroups(tsv):
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
         species = header[3:]
-        total_species = len(species)
 
         for line in fh:
             line = line.strip().split("\t")

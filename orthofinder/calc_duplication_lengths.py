@@ -7,6 +7,7 @@ occurred within a species).
 import sys
 import argparse
 import re
+from gff import ID_RE
 
 def read_dups(infile="-"):
     """Read duplicated genes names."""
@@ -28,14 +29,13 @@ def read_dups(infile="-"):
 
 def get_gene_lengths(gff):
     """Load all gene lengths from GFF file."""
-    gene_re = "ID=([^;]+)"
     gene_lengths = {}  # maker id -> gene length
     with open(gff, "r") as fh:
         for line in fh:
             if not line.startswith("#"):
                 line = line.strip().split("\t")
                 if line[2] == "gene":
-                    gene = re.search(gene_re, line[8])[1]
+                    gene = re.search(ID_RE, line[8])[1]
                     length = int(line[4]) - int(line[3])
                     gene_lengths[gene] = length
     

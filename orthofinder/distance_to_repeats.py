@@ -4,6 +4,7 @@ import sys
 import re
 import argparse
 from collections import namedtuple
+from gff import ID_RE
 
 Interval = namedtuple("Interval", ["info", "start", "end"])
 
@@ -52,13 +53,13 @@ def load_gene_names(gene_names="-"):
 def load_orthogroup_genes(gene_names, gff):
     """Load information of mRNAs in gene_names from annotation gff."""
     gene_info = {}  # scaf -> [Interval]
-    id_re = "ID=([^;]+)"
+
     with open(gff, "r") as fh:
         for line in fh:
             if not line.startswith("#"):
                 line = line.strip().split("\t")
                 if line[2] == "mRNA":
-                    gene_id = re.match(id_re, line[8])[1]
+                    gene_id = re.match(ID_RE, line[8])[1]
                     if gene_id in gene_names:
                         scaf = line[0]
                         start = int(line[3])
@@ -94,10 +95,8 @@ def print_distances(genes, repeats):
                 
                 left = repeat_intervals[i-1] if i > 0 else None
                 left_dist = gene_start - left.end if left is not None else "NA"
-                left_info = left.info if left is not None else "NA"
                 right = repeat_intervals[i] if i < num_reps else None
                 right_dist = right.start - gene_end if right is not None else "NA"
-                right_info = right.info if right is not None else "NA"
                 
                 if left_dist == "NA":
                     closest = right
