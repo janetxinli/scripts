@@ -72,6 +72,7 @@ def summarize_orthogroups(orthogroups, outfile=None):
     
     core = 0
     single_core = 0
+    var_core = 0  # variable copy core ogs
     acc = 0
     singleton = 0
     total = 0
@@ -82,6 +83,8 @@ def summarize_orthogroups(orthogroups, outfile=None):
             core += 1
             if is_single_core(orthogroups[og]):
                 single_core += 1
+            else:
+                var_core += 1
         elif is_accessory(orthogroups[og]):
             acc += 1
         elif is_singleton(orthogroups[og]):
@@ -89,10 +92,11 @@ def summarize_orthogroups(orthogroups, outfile=None):
     
     print("type\tcategory\tcount", file=outfh)
     print(f"total\tall\t{total}", file=outfh)
-    print(f"core\tall\t{core}", file=outfh)
+    print(f"core\ttotal\t{core}", file=outfh)
     print(f"core\tsingle_copy\t{single_core}", file=outfh)
-    print(f"accessory\tall\t{acc}", file=outfh)
-    print(f"singleton\tall\t{singleton}", file=outfh)
+    print(f"core\tvar_copy\t{var_core}", file=outfh)
+    print(f"accessory\ttotal\t{acc}", file=outfh)
+    print(f"singleton\ttotal\t{singleton}", file=outfh)
 
     outfh.close()
         

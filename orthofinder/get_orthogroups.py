@@ -46,6 +46,9 @@ def print_list(orthogroups, og_to_print, outfile=None):
     if not outfile is None:
         outfh.close()
 
+def is_var_core(orthogroup):
+    return is_core and not is_single_core
+
 def parse_args():
     """Get the command line arguments."""
     parser = argparse.ArgumentParser(description="Print core or accessory orthogroups")
@@ -55,7 +58,7 @@ def parse_args():
     parser.add_argument("-t", "--orth_type",
                         type=str,
                         default="core_single",
-                        choices=["core_single", "core_all", "accessory", "singleton"],
+                        choices=["core_single", "core_all", "core_var", "accessory", "singleton"],
                         help="Orthogroup type of interest [core_single]")
     parser.add_argument("-o", "--outfile",
                         type=str,
@@ -74,6 +77,7 @@ def main():
     tests = {
         "core_single": is_single_core,
         "core_all": is_core,
+        "core_var": is_var_core,
         "accessory": is_accessory,
         "singleton": is_singleton
     }
