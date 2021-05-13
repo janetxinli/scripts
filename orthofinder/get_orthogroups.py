@@ -47,7 +47,7 @@ def print_list(orthogroups, og_to_print, outfile=None):
         outfh.close()
 
 def is_var_core(orthogroup):
-    return is_core and not is_single_core
+    return is_core(orthogroup) and not is_single_core(orthogroup)
 
 def parse_args():
     """Get the command line arguments."""
