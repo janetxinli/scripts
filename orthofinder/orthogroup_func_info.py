@@ -8,7 +8,7 @@ import argparse
 import sys
 import re
 from orthofinder import load_orthogroups
-from gff import ID_RE, GO_RE, PFAM_RE
+from gff import ID_RE, GO_RE, PFAM_RE, mrna_functional_info
 
 def get_most_common(terms):
     """
@@ -17,26 +17,6 @@ def get_most_common(terms):
     """
     max_count = max(terms.values())
     return [k for k, v in terms.items() if v == max_count]
-
-def mrna_functional_info(gff):
-    """
-    Get functional info (GO terms and Pfam domains) from
-    a MAKER gff file.
-    """
-    func = {}  # mrna_id -> ([go terms], [pfam domains])
-
-    with open(gff, "r") as fh:
-        for line in fh:
-            if not line.startswith("#"):
-                line = line.strip().split("\t")
-                if line[2] == "mRNA":
-                    info = line[8]
-                    mrna_id = re.search(ID_RE, info)[1]
-                    go_terms = re.findall(GO_RE, info)
-                    pfam_doms = re.findall(PFAM_RE, info)
-                    func[mrna_id] = (go_terms, pfam_doms)
-    
-    return func
 
 def print_orthogroup_func(orthogroups, func_info):
     """Prints orthogroup GO terms."""
