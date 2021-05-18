@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Get mRNA functional info (GO and Pfam) from a MAKER gff file."""
 
 import re
-from gff import ID_RE, GO_RE, PFAM_RE
+from gff import ID_RE, NOTE_RE
 
-def mrna_functional_info(gff):
+def mrna_note(gff):
     """
     Get functional info (GO terms and Pfam domains) from
     a MAKER gff file.
     """
-    func = {}  # mrna_id -> ([go terms], [pfam domains])
+    notes = {}  # mrna_id -> note
 
     with open(gff, "r") as fh:
         for line in fh:
@@ -18,8 +17,7 @@ def mrna_functional_info(gff):
                 if line[2] == "mRNA":
                     info = line[8]
                     mrna_id = re.search(ID_RE, info)[1]
-                    go_terms = re.findall(GO_RE, info)
-                    pfam_doms = re.findall(PFAM_RE, info)
-                    func[mrna_id] = (go_terms, pfam_doms)
-    
-    return func
+                    note = re.search(NOTE_RE, info)[1]
+                    notes[mrna_id] = note
+
+    return notes
