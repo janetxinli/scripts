@@ -53,33 +53,33 @@ def clean_dfs(hog, func, indices):
             arr = arr & hog.iloc[:, i].isnull()
     
     group = hog[arr]
-    group.drop(group.columns[tuple([drop_cols])], axis=1, inplace=True)  # Tuple here?
+    group.drop(group.columns[tuple([drop_cols])], axis=1, inplace=True)
     group_func = group.merge(func, on=["HOG", "OG"], how="left")
 
     return group_func
 
-def get_func_info(df, colname, info_func, dropcol):
+def get_func_info(df, colname, new_colname, info_func, dropcol):
     """Get functional information and merge into orthogroup df."""
     df_copy = df.copy()
-    df_copy[colname] = df_copy[colname].dropna().map(lambda x: x.split(","))
-    df_copy = df_copy.explode(colname)
+    unique_terms = df[colname].dropna().map(lambda x: x.split(",")).explode().unique()
+    term_names = {}
 
-    # Explode comma-separated column
-    terms = df_copy[colname].dropna().unique()
-    func_terms = pd.DataFrame(terms, columns=[colname])
-    func_terms["label"] = func_terms[colname].map(info_func)
-    df_copy = df_copy.merge(func_terms, on=colname).drop(dropcol, axis=1)
+    # Map accession to term name/description
+    for acc in unique_terms:
+        term_names[acc] = info_func(acc)
+    
+    df_copy[new_colname] = df_copy[colname].map(lambda x: ",".join([term_names[i] for i in x.split(",")]), na_action="ignore")
+    df_copy.drop(dropcol, axis=1, inplace=True)
 
     return df_copy
+
 
 def get_mrna_note(df, species, gff):
     mrna_to_note = mrna_note(gff)
 
-    # Split and unnest gene column
-    df[species] = df[species].map(lambda x: x.split(",")).explode(species)
     idx = df.columns.get_loc(species)
-    new_col = species + "_gene_note"
-    df.insert(idx + 1, new_col, df[species].map(lambda x: mrna_to_note[x] if x in mrna_to_note else ""))
+    new_col = species + "_gene_notes"
+    df.insert(idx + 1, new_col, df[species].map(lambda x: ",".join([mrna_to_note[i] for i in x.split(",") if i in mrna_to_note])))
     
     return df
 
@@ -103,11 +103,19 @@ def parse_args():
                         type=str,
                         help="GFF files for species (must be given in the same "
                              "order as the --species argument")
+    parser.add_argument("-v", "--verbose",
+                        action="store_true",
+                        help="Print verbose output")
+
 
     return parser.parse_args()
 
 def main():
     args = parse_args()
+
+    if (args.verbose):
+        print("getting header from N0.tsv", file=sys.stdout)
+    
     header = get_header(args.tsv)
 
     if len(args.species) != len(args.gff):
@@ -115,7 +123,7 @@ def main():
               "gff files provided")
         sys.exit(1)
 
-    # Get indices of species of interest
+    # Get indices of species in group
     indices = [i for i, sp in enumerate(header) if sp in args.species]
     
     if len(indices) != len(args.species):
@@ -123,22 +131,47 @@ def main():
               "in {args.tsv}")
         sys.exit(1)
     
+    if (args.verbose):
+        print("reading hierarchical orthogroups into memory", file=sys.stdout)
+    
     hog = pd.read_csv(args.tsv, sep="\t")
+
+    if (args.verbose):
+        print("reading functional information into memory", file=sys.stdout)
+    
     func = pd.read_csv(args.func, sep="\t")
+    
+    if (args.verbose):
+        print("finding group-specific orthogroups", file=sys.stdout)
+    
     group_func = clean_dfs(hog, func, indices)
 
-    print("getting GO term labels")
-    go = get_func_info(group_func, "go_terms", get_go_label, "pfam_domains")
+    # Print all core orthogroups to file
+    # group_func.drop(["go_terms", "pfam_domains"], axis=1) \
+    #           .to_csv(f"{args.group}_core_orthogroups.tsv", sep="\t", index=False)
 
-    # print("getting Pfam accession descriptions")
-    # pfam = get_func_info(group_func, "pfam_domains", get_pfam_desc, "go_terms")
+    if (args.verbose):
+        print("getting GO term labels", file=sys.stdout)
+    
+    go = get_func_info(group_func, "go_terms", "go_labels", get_go_label, "pfam_domains")
 
+    if (args.verbose):
+        print("getting Pfam accession descriptions", file=sys.stdout)
+    
+    pfam = get_func_info(group_func, "pfam_domains", "pfam_descs", get_pfam_desc, "go_terms")
+
+    if (args.verbose):
+        print("adding gene information for core orthogroups", file=sys.stdout)
+    
     for i, sp in enumerate(args.species):
+        if (args.verbose):
+            print(f"current species: {sp}", file=sys.stdout)
+        
         go = get_mrna_note(go, sp, args.gff[i])
-        # pfam = get_mrna_note(pfam, sp, args.gff[i])
+        pfam = get_mrna_note(pfam, sp, args.gff[i])
 
-    go.to_csv(f"{args.group}_orthogroups.go_terms.tsv", sep="\t", index=False)
-    # pfam.to_csv(f"{args.group}_orthogroups.pfam_domains.tsv", sep="\t", index=False)
+    go.to_csv(f"{args.group}_core_orthogroups.go_terms.tsv", sep="\t", index=False)
+    pfam.to_csv(f"{args.group}_core_orthogroups.pfam_domains.tsv", sep="\t", index=False)
 
 if __name__ == "__main__":
     main()
