@@ -59,7 +59,7 @@ class AntismashJson:
             ["knowncluster"]["results"][region_no - 1]
         if sub_dict["total_hits"] > 0:
             acc = sub_dict["ranking"][0][0]["accession"]
-            desc = sub_dict["ranking"][0][0]["description"]
+            desc = sub_dict["ranking"][0][0]["description"].replace(" ", "_")
             hits = sub_dict["ranking"][0][1]["hits"]
             return acc, desc, hits
         else:

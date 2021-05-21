@@ -92,7 +92,7 @@ def summarize_orthogroups(orthogroups, outfile=None):
     
     print("type\tcategory\tcount", file=outfh)
     print(f"total\tall\t{total}", file=outfh)
-    print(f"core\ttotal\t{core}", file=outfh)
+    #print(f"core\ttotal\t{core}", file=outfh)
     print(f"core\tsingle_copy\t{single_core}", file=outfh)
     print(f"core\tvar_copy\t{var_core}", file=outfh)
     print(f"accessory\ttotal\t{acc}", file=outfh)
