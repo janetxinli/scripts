@@ -10,19 +10,19 @@ from gff import ID_RE, GO_RE
 
 def load_gff_go(gff):
     """Load GO terms for genes in a gff file."""
-    gene_go_terms = {}  # mRNA ID -> [associated go terms]
+    gene_go_terms = {}  # gene ID -> [associated go terms]
 
     with open(gff, "r") as fh:
         for line in fh:
             if not line.startswith("#"):
                 line = line.strip().split("\t")
-                if line[2] == "mRNA":
+                if line[2] == "gene":
                     info = line[8]
-                    mrna_id = re.match(ID_RE, info)[1]
+                    gene_id = re.match(ID_RE, info)[1]
                     go_terms = re.findall(GO_RE, info)
                     if len(go_terms) > 0:
                         for _ in go_terms:
-                            gene_go_terms[mrna_id] = go_terms
+                            gene_go_terms[gene_id] = go_terms
     
     return gene_go_terms
 
@@ -48,18 +48,19 @@ def get_go_label(go_id):
     data = res.json()
     return data["label"] if "label" in data else "NA"
 
-def print_gmt(species, orthogroups, all_mrnas):
+def print_gmt(species, orthogroups, all_genes):
     """Print info in gmt format."""
     go_to_genes = {}
     for orth in orthogroups:
-        for i, genes in enumerate(orthogroups[orth]):
+        for i, mrnas in enumerate(orthogroups[orth]):
             cur_sp = species[i]
-            if genes[0] == "":
+            if mrnas[0] == "":
                 continue
             else:
-                for gene in genes:
-                    if gene in all_mrnas[cur_sp]:
-                        go_terms = all_mrnas[cur_sp][gene]
+                for m in mrnas:
+                    gene = re.search("(.+)-R[A-Z]+", m)[1]  # Convert mRNA ID to gene ID
+                    if gene in all_genes[cur_sp]:
+                        go_terms = all_genes[cur_sp][gene]
                         for go in go_terms:
                             if go not in go_to_genes:
                                 go_to_genes[go] = []
@@ -87,7 +88,7 @@ def main():
     args = parse_args()
     names_to_files = get_names_to_files(args.map)
     orthogroups, species = load_orthogroups(args.tsv)
-    orthogroups = {k: [i.split(", ") for i in v] for k, v in orthogroups.items()}
+    orthogroups = {k: [i.split(", ") for i in v] for k, v in orthogroups.items()}  # Split csv mRNAs into a list
 
     for s in species:
         if s not in names_to_files:
@@ -95,12 +96,12 @@ def main():
                 file=sys.stderr)
             sys.exit(1)
     
-    all_mrnas = {}
+    all_genes = {}
     for name in names_to_files:
-        mrnas = load_gff_go(names_to_files[name])
-        all_mrnas[name] = mrnas
+        genes = load_gff_go(names_to_files[name])
+        all_genes[name] = genes
     
-    print_gmt(species, orthogroups, all_mrnas)
+    print_gmt(species, orthogroups, all_genes)
 
 
 if __name__ == "__main__":
