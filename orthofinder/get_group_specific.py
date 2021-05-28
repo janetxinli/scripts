@@ -58,7 +58,7 @@ def clean_dfs(hog, func, indices):
 
     return group_func
 
-def get_func_info(df, colname, new_colname, info_func, dropcol):
+def get_func_info(df, colname, new_colname, info_func,):
     """Get functional information and merge into orthogroup df."""
     df_copy = df.copy()
     unique_terms = df[colname].dropna().map(lambda x: x.split(",")).explode().unique()
@@ -68,8 +68,10 @@ def get_func_info(df, colname, new_colname, info_func, dropcol):
     for acc in unique_terms:
         term_names[acc] = info_func(acc)
     
-    df_copy[new_colname] = df_copy[colname].map(lambda x: ",".join([term_names[i] for i in x.split(",")]), na_action="ignore")
-    df_copy.drop(dropcol, axis=1, inplace=True)
+    idx = df_copy.columns.get_loc(colname)
+    df_copy \
+        .insert(idx + 1, new_colname, df_copy[colname] \
+            .map(lambda x: ",".join([term_names[i] for i in x.split(",")]), na_action="ignore"))
 
     return df_copy
 
@@ -79,7 +81,7 @@ def get_mrna_note(df, species, gff):
 
     idx = df.columns.get_loc(species)
     new_col = species + "_gene_notes"
-    df.insert(idx + 1, new_col, df[species].map(lambda x: ",".join([mrna_to_note[i] for i in x.split(",") if i in mrna_to_note])))
+    df.insert(idx + 1, new_col, df[species].map(lambda x: ",".join([mrna_to_note[i] for i in x.split(", ") if i in mrna_to_note])))
     
     return df
 
@@ -125,7 +127,7 @@ def main():
 
     # Get indices of species in group
     indices = [i for i, sp in enumerate(header) if sp in args.species]
-    
+
     if len(indices) != len(args.species):
         print(f"get_group_specific.py: error: not all species found "
               "in {args.tsv}")
@@ -147,18 +149,18 @@ def main():
     group_func = clean_dfs(hog, func, indices)
 
     # Print all core orthogroups to file
-    # group_func.drop(["go_terms", "pfam_domains"], axis=1) \
-    #           .to_csv(f"{args.group}_core_orthogroups.tsv", sep="\t", index=False)
+    group_func.drop(["go_terms", "pfam_domains"], axis=1) \
+              .to_csv(f"{args.group}_core_orthogroups.tsv", sep="\t", index=False)
 
     if (args.verbose):
         print("getting GO term labels", file=sys.stdout)
     
-    go = get_func_info(group_func, "go_terms", "go_labels", get_go_label, "pfam_domains")
+    og_func = get_func_info(group_func, "go_terms", "go_labels", get_go_label)
 
     if (args.verbose):
         print("getting Pfam accession descriptions", file=sys.stdout)
     
-    pfam = get_func_info(group_func, "pfam_domains", "pfam_descs", get_pfam_desc, "go_terms")
+    og_func = get_func_info(og_func, "pfam_domains", "pfam_descs", get_pfam_desc)
 
     if (args.verbose):
         print("adding gene information for core orthogroups", file=sys.stdout)
@@ -167,11 +169,9 @@ def main():
         if (args.verbose):
             print(f"current species: {sp}", file=sys.stdout)
         
-        go = get_mrna_note(go, sp, args.gff[i])
-        pfam = get_mrna_note(pfam, sp, args.gff[i])
+        og_func = get_mrna_note(og_func, sp, args.gff[i])
 
-    go.to_csv(f"{args.group}_core_orthogroups.go_terms.tsv", sep="\t", index=False)
-    pfam.to_csv(f"{args.group}_core_orthogroups.pfam_domains.tsv", sep="\t", index=False)
+    og_func.to_csv(f"{args.group}_core_orthogroups.func.tsv", sep="\t", index=False)
 
 if __name__ == "__main__":
     main()
