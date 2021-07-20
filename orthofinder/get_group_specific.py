@@ -33,9 +33,14 @@ def get_go_label(go_id):
 def get_pfam_desc(acc):
     """Get the Pfam description given an accession term."""
     res = requests.get(f"https://pfam.xfam.org/family/{acc}?output=xml")
-    tree = ElementTree.fromstring(res.content)
     
-    return tree[0][0].text.strip()
+    try:
+        tree = ElementTree.fromstring(res.content)
+        desc = tree[0][0].text.strip()
+    except ElementTree.ParseError:
+        desc = "" 
+    
+    return desc
 
 
 def clean_dfs(hog, func, indices):
@@ -71,7 +76,7 @@ def get_func_info(df, colname, new_colname, info_func,):
     idx = df_copy.columns.get_loc(colname)
     df_copy \
         .insert(idx + 1, new_colname, df_copy[colname] \
-            .map(lambda x: ",".join([term_names[i] for i in x.split(",")]), na_action="ignore"))
+        .map(lambda x: ",".join([term_names[i] for i in x.split(",")]), na_action="ignore"))
 
     return df_copy
 
