@@ -1,5 +1,5 @@
 #!/bin/bash
-# Summarize a busco short summary file
+# Summarize a busco (v5) short summary file
 
 if [[ $# -lt 1 ]]; then
 	echo "Usage: $(basename $0) <busco short summary files>"
@@ -14,7 +14,7 @@ printf "complete\tcomplete_single\tcomplete_dup\tfragmented\tmissing\ttotal\tcom
 for s in ${summaries[@]}; do
 	f=$(basename ${s})
 	if [[ "${f}" != "${b}" ]]; then
-		for v in $(tail -n6 ${s} | awk '{print $1}'); do
+		for v in $(tail -n +10 ${s} | head -n 6 | awk '{print $1}'); do
 			printf "$v\t"
 		done
 		printf "$(grep "C:" ${s} | awk -F : '{print $2}' | awk -F % '{print $1}')\t"
