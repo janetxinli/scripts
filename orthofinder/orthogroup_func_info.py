@@ -6,9 +6,8 @@ Selects the most common GO and Pfam annotations.
 
 import argparse
 import sys
-import re
 from orthofinder import load_orthogroups
-from gff import ID_RE, GO_RE, PFAM_RE, mrna_functional_info
+from gff import functional_info
 
 def get_most_common(terms):
     """
@@ -77,7 +76,7 @@ def main():
     # Load go terms in each gff file
     all_func_info = {}
     for gff in args.gff:
-        all_func_info.update(mrna_functional_info(gff))
+        all_func_info.update(functional_info(gff))
     
     print_orthogroup_func(orthogroups, all_func_info)
 
