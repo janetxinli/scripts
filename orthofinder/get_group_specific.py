@@ -26,8 +26,11 @@ def get_header(tsv):
 def get_go_label(go_id):
     """Get the Gene Ontology label given a GO id."""
     res = requests.get(f"http://api.geneontology.org/api/ontology/term/{go_id}")
-    
-    return res.json()["label"]
+    try:
+        return res.json()["label"]
+    except KeyError:
+        return go_id
+
 
 
 def get_pfam_desc(acc):
