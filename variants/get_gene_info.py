@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
 Get gene names and AED/eAED score for snpEff gene output.
+Also cleans file to have one impact/effect per line.
 """
 
 import argparse
 import os
 import re
 import sys
+import pandas as pd
 from collections import namedtuple
 
 Gene = namedtuple("Gene", ["name", "aed", "eaed"])
@@ -31,30 +33,39 @@ def load_genes(fasta):
     return genes
 
 
+def get_gene_info(x, gene_info):
+    """Get gene info for a row in snpEff gene variants file."""
+    gene = gene_info[x.TranscriptId]
+    return pd.Series([gene.name, gene.aed, gene.eaed])
+
+
 def add_gene_info(vargenes, gene_info, outfile):
-    if not outfile:
-        outfh = sys.stdout
-    else:
-        outfh = open(outfile, "w+")
+    """Add gene info and pivot table, then write to outfile."""
+    if outfile is None:
+        outfile = sys.stdout
     
-    with open(vargenes, "r") as fh:
-        outfh.write(fh.readline())  # keep first line as-is
-        cols = fh.readline().strip().split("\t")
-        cols.extend(["maker_gene_name", "AED", "eAED\n"])
-        outfh.write("\t".join(cols))
-        
-        for line in fh:
-            line = line.strip().split("\t")
-            gene_id = line[2]
-            try:
-                gene_name, aed, eaed = gene_info[gene_id]
-            except KeyError:
-                print(f"Error: Gene {gene_id} not found in reference fasta file. Check your inputs.")
-                if not outfile is None:
-                    os.remove(outfile)
-                sys.exit(1)
-            line.extend([gene_name, aed, f"{eaed}\n"])
-            outfh.write("\t".join(line))
+    df = pd.read_csv(vargenes, sep="\t", skiprows=1)
+    df[["maker_gene_name", "AED", "eAED"]] = df.apply(lambda x: get_gene_info(x, gene_info), axis=1)
+
+    # Pivot variants_impact_* columns
+    impact_cols = [i for i in df.columns if i.startswith("variants_impact")]
+    id_vars = list(set(df.columns) - set(impact_cols))
+    df = pd.melt(df, id_vars=id_vars, value_vars=impact_cols, var_name="variant_impact_type", value_name="variant_impact_count")
+    df["variant_impact_type"] = df["variant_impact_type"].map(lambda x: x.replace("variants_impact_", ""))
+    
+    # Pivot variants_effect_* columns
+    effect_cols = [i for i in df.columns if i.startswith("variants_effect")]
+    id_vars = list(set(df.columns) - set(effect_cols))
+    df = pd.melt(df, id_vars=id_vars, value_vars=effect_cols, var_name="variant_effect_type", value_name="variant_effect_count")
+    df["variant_effect_type"] = df["variant_effect_type"].map(lambda x: x.replace("variants_effect_", ""))
+
+    df = df.loc[(df["variant_impact_count"] != 0) & (df["variant_effect_count"] != 0)]
+    
+    df[[
+        "#GeneName", "GeneId", "TranscriptId", "BioType", "variant_impact_type",
+        "variant_impact_count", "variant_effect_type", "variant_effect_count",
+        "AED", "eAED", "maker_gene_name"
+        ]].to_csv(outfile, sep="\t", index=False)
 
 
 def parse_args():
@@ -78,9 +89,9 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.outfile is None:
+    if not args.outfile is None:
         if os.path.exists(args.outfile):
-            print(f"Error: file {args.outfile} already exists. Exiting.")
+            print(f"Error: output file {args.outfile} already exists. Exiting.")
     
     gene_info = load_genes(args.fasta)
     add_gene_info(args.vargenes, gene_info, args.outfile)
