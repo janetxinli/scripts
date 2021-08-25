@@ -60,6 +60,11 @@ def add_gene_info(vargenes, gene_info, outfile):
     df["variant_effect_type"] = df["variant_effect_type"].map(lambda x: x.replace("variants_effect_", ""))
 
     df = df.loc[(df["variant_impact_count"] != 0) & (df["variant_effect_count"] != 0)]
+
+    # Sort variant_impact_type by categorical values
+
+    df["variant_impact_type"] = pd.Categorical(df["variant_impact_type"], ["HIGH", "MODERATE", "LOW", "MODIFIER"])
+    df = df.sort_values("variant_impact_type")
     
     df[[
         "#GeneName", "GeneId", "TranscriptId", "BioType", "variant_impact_type",
