@@ -40,7 +40,7 @@ def get_fastx_seqs(filename, format):
 def get_aln_seqs(filename):
     """Parses a SAM/BAM file and return a list of tuples (name, sequence)."""
     seqs = []
-    aln_file = pysam.AlignmentFile(filename)
+    aln_file = pysam.AlignmentFile(filename, check_sq=False)
 
     for read in aln_file.fetch(until_eof=True):
         seqs.append((read.query_name, read.query_sequence))
