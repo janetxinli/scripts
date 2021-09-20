@@ -51,7 +51,7 @@ def extract_and_lookup(gff, feature, element):
         "go": (GeneFeatureInfo.get_go_terms, get_go_label),
     }
 
-    info = dict()  # id -> [accession, description]
+    info = dict()  # id -> [[accession, description], ...]
     elem_ids = set()
     elem_id_to_name = dict()
 
@@ -63,19 +63,22 @@ def extract_and_lookup(gff, feature, element):
             if line[2] == feature:
                 id = GeneFeatureInfo.get_id(line[8])
                 element_vals = element_methods[element][0](line[8])
-                if not element_vals == None:
+
+                if len(element_vals):
+                    info[id] = []
                     for e in element_vals:
                         elem_ids.add(e)
-                        info[id] = [e]  # Only add accession at first
+                        info[id].append([e])  # Only add accession at first
     
     # Look up names of element accession
     for e in elem_ids:
         elem_id_to_name[e] = element_methods[element][1](e)
     
     # Add element name to dict
-    for i in info:
-        elem_name = elem_id_to_name[info[i][0]]
-        info[i].append(elem_name)
+    for id in info:
+        for i, elem in enumerate(info[id]):
+            elem_name = elem_id_to_name[elem[0]]
+            info[id][i].append(elem_name)
     
     return info
 
@@ -126,12 +129,14 @@ def main():
     if args.element == "pfam" or args.element == "go":
         info = extract_and_lookup(args.gff, args.feature, args.element)
         print(args.feature, args.element, "description", sep="\t")
+        for id in info:
+            for elem in info[id]:
+                print(id, *elem, sep="\t")
     else:
-        info = extract(args.gff, args.feature, args.element, sep="\t")
+        info = extract(args.gff, args.feature, args.element)
         print(args.feature, args.element)
-    
-    for i in info:
-        print(i, *info[i], sep="\t")
+        for i in info:
+            print(i, *info[i], sep="\t")
 
 if __name__ == "__main__":
     main()
