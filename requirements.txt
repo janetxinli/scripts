@@ -15,6 +15,7 @@ decorator==5.0.7
 defusedxml==0.7.1
 entrypoints==0.3
 idna==2.10
+intervaltree==3.1.0
 ipykernel==5.5.3
 ipython==7.22.0
 ipython-genutils==0.2.0
