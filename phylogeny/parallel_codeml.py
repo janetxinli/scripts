@@ -29,10 +29,26 @@ def generate_ctl(alignment, tree, model, outfile):
     # Set constant params
     cml.set_options(
         noisy=9,
-        verbose=1,
+        verbose=0,
+        runmode=0,
         seqtype=1,
         CodonFreq=2,
-        clock=0
+        clock=0,
+        aaDist=0,
+        fix_alpha=1,
+        alpha=0.0,
+        Malpha=0,
+        aaRatefile="dat/jones.dat",
+        icode=0,
+        fix_kappa=0,
+        kappa=2,
+        getSE=0,
+        ncatG=8,
+        RateAncestor=1,
+        Small_Diff=.5e-6,
+        cleandata=1,
+        fix_blength=None,
+        ndata=None
         )
 
     # Set model-specific params
@@ -64,6 +80,7 @@ def run_codeml(alignment_files, tree, model, outfile):
     for alignment in alignment_files:
         cml = generate_ctl(alignment, tree, model, outfile=outfile)
         cml.run(verbose=True, parse=False)
+
 
 def launch_run_codeml(num_processes, partitioned_alignments, tree, model, outfile):
     """Launch num_processes parallel processes for codeml."""
