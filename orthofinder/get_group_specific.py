@@ -46,27 +46,27 @@ def get_pfam_desc(acc):
     return desc
 
 
-def clean_dfs(hog, func, indices):
+def clean_dfs(og, func, indices):
     """
     Merge orthogroups with functional information, and find
     group-specific orthogroups.
     """
-    drop_cols = [i for i in range(3, hog.shape[1]) if i not in indices]
-    arr = np.ones(hog.shape[0], dtype=bool)
+    drop_cols = [i for i in range(1, og.shape[1]) if i not in indices]
+    arr = np.ones(og.shape[0], dtype=bool)
     
-    for i in range(3, hog.shape[1]):
+    for i in range(1, og.shape[1]):
         if i in indices:
-            arr = arr & ~hog.iloc[:, i].isnull()
+            arr = arr & ~og.iloc[:, i].isnull()
         else:
-            arr = arr & hog.iloc[:, i].isnull()
+            arr = arr & og.iloc[:, i].isnull()
     
-    group = hog[arr]
+    group = og[arr]
     group.drop(group.columns[tuple([drop_cols])], axis=1, inplace=True)
-    group_func = group.merge(func, on=["HOG", "OG"], how="left")
+    group_func = group.merge(func, left_on="Orthogroup", right_on="OG", how="left")
 
     return group_func
 
-def get_func_info(df, colname, new_colname, info_func,):
+def get_func_info(df, colname, new_colname, info_func):
     """Get functional information and merge into orthogroup df."""
     df_copy = df.copy()
     unique_terms = df[colname].dropna().map(lambda x: x.split(",")).explode().unique()
@@ -142,9 +142,9 @@ def main():
         sys.exit(1)
     
     if (args.verbose):
-        print("reading hierarchical orthogroups into memory", file=sys.stdout)
+        print("reading orthogroups into memory", file=sys.stdout)
     
-    hog = pd.read_csv(args.tsv, sep="\t")
+    og = pd.read_csv(args.tsv, sep="\t")
 
     if (args.verbose):
         print("reading functional information into memory", file=sys.stdout)
@@ -154,7 +154,7 @@ def main():
     if (args.verbose):
         print("finding group-specific orthogroups", file=sys.stdout)
     
-    group_func = clean_dfs(hog, func, indices)
+    group_func = clean_dfs(og, func, indices)
 
     # Print all core orthogroups to file
     group_func.drop(["go_terms", "pfam_domains"], axis=1) \

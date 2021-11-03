@@ -6,18 +6,17 @@ from orthofinder import is_core, is_single_core, is_accessory, is_singleton, get
 
 def load_orthogroups(tsv):
     """Load all orthogroups from file."""
-    orthogroups = {}  # (HOG, OG) -> [names of genes in each species]
+    orthogroups = {}  # OG -> [names of genes in each species]
 
     with open(tsv, "r") as fh:
         header = fh.readline().strip().split("\t")
-        species = header[3:]
+        species = header[1:]
 
         for line in fh:
             line = line.strip().split("\t")
-            ortho_genes = line[3:]
-            hog = line[0]
-            og = line[1]
-            orthogroups[(hog, og)] = ortho_genes
+            ortho_genes = line[1:]
+            og = line[0]
+            orthogroups[og] = ortho_genes
     
     return orthogroups, species
 
@@ -25,17 +24,17 @@ def print_table(orthogroups, og_to_print, species, outfile=None):
     """Print orthogroups in table format."""
 
     outfh = sys.stdout if outfile is None else open(outfile, "w+")
-    print("HOG", "OG", *species, sep="\t", file=outfh)
+    print("OG", *species, sep="\t", file=outfh)
     
     for o in orthogroups:
         if o in og_to_print:
-            print(o[0], o[1], *orthogroups[o], sep="\t", file=outfh)
+            print(o, *orthogroups[o], sep="\t", file=outfh)
     
     if not outfile is None:
         outfh.close()
 
 def print_list(orthogroups, og_to_print, outfile=None):
-    """Print orthogroup genes in lsit format."""
+    """Print orthogroup genes in list format."""
     outfh = sys.stdout if outfile is None else open(outfile, "w+")
     orthogroups = [[i.split(", ") for i in v] for k, v in orthogroups.items() if k in og_to_print]
     for og in orthogroups:
@@ -54,7 +53,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Print core or accessory orthogroups")
     parser.add_argument("tsv",
                         type=str,
-                        help="OrthoFinder N0.tsv result file")
+                        help="OrthoFinder Orthogroups.tsv result file")
     parser.add_argument("-t", "--orth_type",
                         type=str,
                         default="core_single",
@@ -83,6 +82,7 @@ def main():
     }
     
     og_to_print = {k for k, v in get_orthogroup_genes(args.tsv).items() if tests[args.orth_type](v)}
+
     orthogroups, species = load_orthogroups(args.tsv)
 
     if args.format == "table" or args.format == "t":

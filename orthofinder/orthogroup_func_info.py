@@ -19,7 +19,7 @@ def get_most_common(terms):
 
 def print_orthogroup_func(orthogroups, func_info):
     """Prints orthogroup GO terms."""
-    print("HOG", "OG", "go_terms", "pfam_domains", sep="\t")
+    print("OG", "go_terms", "pfam_domains", sep="\t")
     for og in orthogroups:
         og_mrnas = orthogroups[og]
         og_go_terms = {}  # GO term -> occurrences
@@ -48,7 +48,7 @@ def print_orthogroup_func(orthogroups, func_info):
         go_to_print = ",".join(og_go_terms) if len(og_go_terms) > 0 else ""
         pfam_to_print = ",".join(og_pfam_doms) if len(og_pfam_doms) > 0 else ""
 
-        print(og[0], og[1], go_to_print, pfam_to_print, sep="\t")
+        print(og, go_to_print, pfam_to_print, sep="\t")
 
 def parse_args():
     """Parse the command line arguments."""
@@ -56,20 +56,21 @@ def parse_args():
                                      "GO terms of orthogroup genes")
     parser.add_argument("tsv",
                         type=str,
-                        help="OrthoFinder N0.tsv file")
+                        help="OrthoFinder Orthogroups.tsv file")
     parser.add_argument("gff",
                         nargs="*",
                         type=str,
                         help="GFF files for OrthoFinder run "
-                             "(in the same order as N0.tsv columns)")
+                             "(in the same order as Orthogroups.tsv columns)")
     
     return parser.parse_args()
 
 def main():
     args = parse_args()
     orthogroups, species = load_orthogroups(args.tsv)
+    
     if len(species) != len(args.gff):
-        print("orthogroup_go_terms.py: error: species in N0.tsv and gff files "
+        print("orthogroup_go_terms.py: error: species in Orthogroups.tsv and gff files "
               "provided is unequal")
         sys.exit(1)
     

@@ -58,7 +58,7 @@ def load_orthogroup_genes(gene_names, gff):
         for line in fh:
             if not line.startswith("#"):
                 line = line.strip().split("\t")
-                if line[2] == "mRNA":
+                if line[2] == "gene":
                     gene_id = re.match(ID_RE, line[8])[1]
                     if gene_id in gene_names:
                         scaf = line[0]

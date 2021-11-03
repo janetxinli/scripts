@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+orthofinder/orthogroup_gmt.py #!/usr/bin/env python3
+"""
+Creates a GMT file from genes in GFF files.
+"""
 
 import sys
 import re
