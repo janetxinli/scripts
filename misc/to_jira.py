@@ -31,14 +31,21 @@ def convert_file(in_fh, outfile, column_headers, no_header, no_rounding, delim, 
         jira_header = "||" + "|".join(header_split) + "|"
     else:
         jira_header = "||" + "||".join(header_split) + "||"
+    
     print(jira_header, file=out)
+    
     for line in in_fh:
         jira_line = ""
         if column_headers:
             jira_line += "|"
-        line_split = [i for i in line.strip().split(delim)]
+        line_split = [i if i != "" else " " for i in line.strip().split(delim)]
         if not no_rounding:
             line_split = [format_number(i, decimal_places) for i in line_split]
+        
+        # Add empty column at the end
+        while len(line_split) < len(header_split):
+            line_split.append(" ")
+
         jira_line += "|" + "|".join(line_split) + "|"
         print(jira_line, file=out)
     out.close()
