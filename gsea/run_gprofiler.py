@@ -7,9 +7,20 @@ from gprofiler import GProfiler
 
 def load_genes(genes):
     gene_list = []
-    with open(genes, "r") as fh:
-        for line in fh:
-            gene_list.append(line.strip())
+    if genes == "-":
+        if not sys.stdin.isatty():
+            fh = sys.stdin
+        else:
+            print("run_gprofiler.py: error: no genes detected from stdin")
+            sys.exit(1)
+    else:
+        fh = open(genes, "r")
+    
+    for line in fh:
+        gene_list.append(line.strip())
+    
+    if genes != "-":
+        fh.close()
     
     return gene_list
 
@@ -25,7 +36,7 @@ def parse_args():
     parser = argparse.ArgumentParser("Perform enrichment analysis with gProfiler and print results as tsv")
     parser.add_argument("genes",
                         type=str,
-                        help="Gene list file (one gene per line)")
+                        help="Gene list file, one gene per line (use '-' for stdin)")
     parser.add_argument("organism",
                         type=str,
                         help="gProfiler organism")
