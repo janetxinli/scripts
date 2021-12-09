@@ -37,7 +37,7 @@ def combine_fasta_aln(filenames, ids):
     
     return alns, alignment_lengths, files
 
-def print_partitions(alignment_lengths, filenames, partition):
+def print_partitions(alignment_lengths, filenames, alignment_type, partition):
     if len(alignment_lengths) != len(filenames):
         raise ValueError("Alignment lengths must equal number of alignment files")
     
@@ -46,7 +46,7 @@ def print_partitions(alignment_lengths, filenames, partition):
         for i, filename in enumerate(filenames):
             start = end + 1
             end = start + alignment_lengths[i] - 1
-            print(f"DNA, {filename}={start}-{end}", file=fh, flush=True)
+            print(f"{alignment_type}, {filename}={start}-{end}", file=fh, flush=True)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Combine several FASTA DNA alignments into relaxed "
@@ -60,11 +60,15 @@ def parse_args():
     parser.add_argument("partition",
                         type=str,
                         help="Name of output partition file")
-    parser.add_argument("-i", "--ids",
+    parser.add_argument("ids",
                         nargs="+",
-                        required=True,
-                        help="Space-separated list of IDs for output PHYLIP file. Must be "
+                        help="Space-separated list of IDs to substitute in PHYLIP file. Must be "
                              "provided in the same order as FASTA alignments")
+    parser.add_argument("-t", "--aln_type",
+                        type=str,
+                        choices=["DNA", "AUTO", "WAG", "LG"],
+                        default="DNA",
+                        help="Alignment type ('DNA' for nucleotide or 'AUTO', 'WAG' or 'LG' for protein) [DNA]")
 
     return parser.parse_args()
 
@@ -77,7 +81,7 @@ def main():
     AlignIO.write(concat_aln, args.phylip, "phylip-relaxed")
 
     # Write partitions to file
-    print_partitions(aln_lengths, filenames, args.partition)
+    print_partitions(aln_lengths, filenames, args.aln_type, args.partition)
 
 if __name__ == "__main__":
     main()
