@@ -25,19 +25,22 @@ def print_orthogroup_func(orthogroups, func_info):
         og_go_terms = {}  # GO term -> occurrences
         og_pfam_doms = {}  # Pfam domain -> occurrences
         for mrna in og_mrnas:
-            if mrna != "" and mrna in func_info:
-                for go in func_info[mrna][0]:
-                    if go not in og_go_terms:
-                        og_go_terms[go] = 0
+            if mrna != "":
+                mrnas = mrna.split(", ")
+                for m in mrnas:
+                    if m in func_info:
+                        for go in func_info[m][0]:
+                            if go not in og_go_terms:
+                                og_go_terms[go] = 0
                     
-                    og_go_terms[go] += 1
+                            og_go_terms[go] += 1
                 
-                for pfam in func_info[mrna][1]:
-                    if pfam not in og_pfam_doms:
-                        og_pfam_doms[pfam] = 0
+                        for pfam in func_info[m][1]:
+                            if pfam not in og_pfam_doms:
+                                og_pfam_doms[pfam] = 0
                     
-                    og_pfam_doms[pfam] += 1
-        
+                            og_pfam_doms[pfam] += 1 
+
         if len(og_go_terms) > 0:
             max_count = max(og_go_terms.values())
             og_go = [k for k, v in og_go_terms.items() if v == max_count]
@@ -78,9 +81,10 @@ def main():
     all_func_info = {}
     for gff in args.gff:
         all_func_info.update(functional_info(gff))
-    
+   
     print_orthogroup_func(orthogroups, all_func_info)
 
 
 if __name__ == "__main__":
     main()
+
