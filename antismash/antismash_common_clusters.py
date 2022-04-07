@@ -17,16 +17,16 @@ def find_common(known_clusters, outfile):
     """Find common clusters in dictionary of sets (intersection)."""
     with open(outfile, "w") as outfh:
         common_clusters = [i for i in set.intersection(*[i for i in known_clusters.values()])]
-        print("accession\tdescription\tknownclusterblast", file=outfh)
+        print("accession\tdescription\tcluster_type\tknownclusterblast", file=outfh)
         if len(common_clusters) > 0:
             for cluster in common_clusters:
-                print(cluster[0], cluster[1], cluster[2], sep="\t", file=outfh)
+                print(cluster[0], cluster[1], cluster[2], cluster[3], sep="\t", file=outfh)
 
 
 def find_group_specific(known_clusters, groups, outfile):
     """Find clusters that are unique to a group."""
     with open(outfile, "w") as outfh:
-        print("group\taccession\tdescription\tknownclusterblast", file=outfh)
+        print("group\taccession\tdescription\tcluster_type\tknownclusterblast", file=outfh)
         group_names = [i for i in groups.keys()]
         for n in group_names:
             group_clusters = []
@@ -45,12 +45,12 @@ def find_group_specific(known_clusters, groups, outfile):
                     group_clusters.append(sample_specific_clust)
             group_specific_clusters = set.intersection(*group_clusters)
             for cluster in group_specific_clusters:
-                print(n, cluster[0], cluster[1], cluster[2], sep="\t", file=outfh)
+                print(n, cluster[0], cluster[1], cluster[2], cluster[3], sep="\t", file=outfh)
 
 def find_clusters(filename):
     """
     Read antiSMASH tsv summary and load clusters into a dictionary.
-    Returns dict{sample -> {(accession, description, knowncluster)}}
+    Returns dict{sample -> {(acc, desc, clust_type, known)}}
     """
     known_clusters = dict()
 
@@ -62,12 +62,12 @@ def find_clusters(filename):
             if len(line) > 7:
                 known = line[5]
                 acc = line[6]
-                desc = line[7].replace(" ", "_")
+                desc = line[7]
                 clust_type = line[8]
                 if acc != "":
                     if cur_sample not in known_clusters:
                         known_clusters[cur_sample] = set()
-                    known_clusters[cur_sample].add((acc, desc, known))
+                    known_clusters[cur_sample].add((acc, desc, clust_type, known))
 
     return known_clusters
 
