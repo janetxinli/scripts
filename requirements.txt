@@ -18,7 +18,7 @@ gprofiler-official==1.0.0
 idna==2.10
 intervaltree==3.1.0
 ipykernel==5.5.3
-ipython==7.22.0
+ipython==7.31.1
 ipython-genutils==0.2.0
 ipywidgets==7.6.3
 jedi==0.18.0
