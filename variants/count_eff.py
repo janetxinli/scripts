@@ -28,16 +28,8 @@ class VariantFile:
                 if geno not in self.genotype_effects:
                     self.genotype_effects[geno] = dict()
                 effects = var_info[6].split(",")
-                effects_clean = set()
-                for effect in effects:
-                    if "&" in effect:
-                        split = set(effect.split("&"))
-                        for s in split:
-                            effects_clean.add(s)
-                    else:
-                        effects_clean.add(effect)
                 tracker = self.indel_effects if indel else self.snp_effects
-                for e in effects_clean:
+                for e in effects:
                     if e in tracker:
                         tracker[e] += 1
                     else:
